@@ -328,7 +328,7 @@
   <section id="screen-start" class="intro">
     <div class="card">
       <div class="eyebrow">How to play</div>
-      <h2>60 seconds. As many muscles as you can.</h2>
+      <h2>2 minutes. As many muscles as you can.</h2>
       <ul class="rules">
         <li>A muscle is named and its region lights up on the figure.</li>
         <li>Type the <b>nerve</b> that supplies it and its <b>nerve roots</b> (e.g. <i>C5, C6</i> or <i>L2&ndash;L4</i>).</li>
@@ -337,7 +337,7 @@
       <div class="points-table">
         <span>&le; 5 s &rarr; 5 pts</span><span>&le; 10 s &rarr; 4</span><span>&le; 15 s &rarr; 3</span><span>&le; 20 s &rarr; 2</span><span>slower &rarr; 1</span>
       </div>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 22px;">Press <b>Enter</b> to move from nerve to roots and to submit. Skipping costs nothing but time. Common alternatives such as <i>peroneal / fibular</i>, <i>PIN</i>, <i>AIN</i> or <i>CN XI</i> are accepted, as are small typos.</p>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 22px;">Press <b>Enter</b> to move from nerve to roots and to submit. Skipping costs nothing but time. Common alternatives such as <i>peroneal / fibular</i>, <i>PIN</i>, <i>AIN</i> or <i>CN XI</i> are accepted. Capitals don't matter and minor spelling mistakes are forgiven.</p>
       <button class="btn" id="btn-start">Start round</button>
     </div>
     <div class="card board" id="board-start"></div>
@@ -350,7 +350,7 @@
       <div class="hud">
         <div class="hud-box">
           <div class="hud-label">Time</div>
-          <div class="hud-value" id="hud-time">60</div>
+          <div class="hud-value" id="hud-time">2:00</div>
           <div class="timebar"><div id="timebar"></div></div>
         </div>
         <div class="hud-box">
@@ -411,7 +411,7 @@
 <script src="data.js"></script>
 <script src="scoreboard-config.js"></script>
 <script>
-const ROUND_SECONDS = 60;
+const ROUND_SECONDS = 120;
 const STORE_KEY = 'myoman.scoreboard.v1';
 const NAME_KEY = 'myoman.lastName';
 
@@ -420,7 +420,8 @@ const NAME_KEY = 'myoman.lastName';
 const STOP_WORDS = new Set(['nerve','nerves','n','branch','branches','of','the','and','division','div','br','from','a','with','its']);
 function normNerve(str){
   return String(str).toLowerCase()
-    .replace(/peroneal/g,'fibular')
+    .replace(/ph/g,'f')
+    .replace(/\bper[oi]n[ei]?al\b/g,'fibular')
     .replace(/[^a-z0-9 ]+/g,' ')
     .split(/\s+/).filter(w => w && !STOP_WORDS.has(w)).join(' ');
 }
@@ -486,19 +487,49 @@ function editDistance(a, b){
   for(let i = 1; i <= a.length; i++){
     for(let j = 1; j <= b.length; j++){
       dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      if(i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) dp[i][j] = Math.min(dp[i][j], dp[i-2][j-2] + 1);
     }
   }
   return dp[a.length][b.length];
 }
 
+// Every nerve name the game knows, used to tell a typo apart from a different nerve.
+// Real nerves that are never a right answer here but look like one that is.
+const DISTRACTORS = ["upper subscapular","pudendal","saphenous","sural","genitofemoral","ilioinguinal",
+  "iliohypogastric","lateral femoral cutaneous","intercostobrachial","lateral cutaneous","medial cutaneous",
+  "hypoglossal","vagus","facial","digital","nerve to subclavius","nerve to obturator internus"];
+const ALL_NERVE_NAMES = [...new Set([
+  ...Object.values(NERVE_ALIASES).flat(),
+  ...DISTRACTORS,
+  ...BRANCHES.flatMap(b => b.accept)
+].map(normNerve).filter(Boolean))];
+
+// How many typing mistakes are forgiven for a name of this length.
+function typoAllowance(len){
+  if(len <= 3) return 0;
+  if(len <= 7) return 1;
+  if(len <= 12) return 2;
+  return 3;
+}
+
+// Capitals, punctuation, extra spaces and words like "nerve" or "branch" are ignored.
+// A misspelling counts if it is close to a right answer and closer to it than to any wrong nerve,
+// so "inferor gluteal" is accepted for gluteus maximus but "superior gluteal" is not.
 function nerveCorrect(id, input){
   const guess = normNerve(input);
   if(!guess) return false;
-  return acceptedNerves(id).some(a => {
-    if(a === guess) return true;
-    const tol = a.length >= 12 ? 2 : a.length >= 6 ? 1 : 0;
-    return tol > 0 && editDistance(a, guess) <= tol;
+  const accepted = acceptedNerves(id);
+  const squash = t => t.replace(/ /g, '');
+  const dist = (a, b) => Math.min(editDistance(a, b), editDistance(squash(a), squash(b)));
+  let bestRight = Infinity, bestRightName = '';
+  accepted.forEach(a => {
+    const d = dist(a, guess);
+    if(d < bestRight){ bestRight = d; bestRightName = a; }
   });
+  if(bestRight === 0) return true;
+  if(bestRight > typoAllowance(bestRightName.length)) return false;
+  const bestWrong = Math.min(Infinity, ...ALL_NERVE_NAMES.filter(n => !accepted.includes(n)).map(n => dist(n, guess)));
+  return bestRight < bestWrong;
 }
 
 // Spinal levels in order, so ranges like C5–T1 can be expanded.
@@ -711,7 +742,8 @@ function nextQuestion(){
 function update(){
   const now = performance.now();
   const left = Math.max(0, (endAt - now) / 1000);
-  $('hud-time').textContent = Math.ceil(left);
+  const secs = Math.ceil(left);
+  $('hud-time').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
   $('hud-time').classList.toggle('low', left <= 10);
   $('timebar').style.width = (left / ROUND_SECONDS * 100) + '%';
   const worth = pointsFor((now - qStart) / 1000);
