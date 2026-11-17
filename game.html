@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nerve Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2ECDD;
+    --paper-2:#EAE2CE;
+    --ink:#232821;
+    --ink-soft:#615F51;
+    --line:#C9BFA4;
+    --panel:#FBF8F0;
+    --muscle:#C9A99A;
+    --muscle-stroke:#6E2F24;
+    --target:#B8432E;
+    --skin:#DAD2BA;
+    --skin-stroke:#B9AE8E;
+    --gold:#96702C;
+    --gold-soft:#B9915A;
+    --good:#3F6B3A;
+    --good-bg:#E3EBD6;
+    --bad:#9B3A2C;
+    --bad-bg:#F3DED6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:36px 24px 60px;}
+  header{
+    text-align:center;
+    margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+  }
+  h1{
+    font-family:'Source Serif 4',serif;
+    font-weight:700;
+    font-size:34px;
+    margin:0 0 6px;
+  }
+  header p{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0;
+    font-style:italic;
+    font-family:'Source Serif 4',serif;
+  }
+  .nav-link{
+    display:inline-block;
+    margin-top:12px;
+    font-size:13px;
+    font-weight:500;
+    color:var(--gold);
+    text-decoration:none;
+  }
+  .nav-link:hover{text-decoration:underline;}
+  @media (max-width:600px){
+    .wrap{padding:24px 16px 48px;}
+    h1{font-size:28px;}
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px;
+  }
+  @media (max-width:600px){ .card{padding:20px 16px;} }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  h2{
+    font-family:'Source Serif 4',serif;
+    font-size:26px;
+    margin:0 0 12px;
+  }
+  p{line-height:1.55;}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    padding:11px 22px;
+    border-radius:22px;
+    border:1px solid var(--gold);
+    background:var(--gold);
+    color:var(--panel);
+    cursor:pointer;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent; color:var(--gold);}
+  .btn:disabled{opacity:0.5; cursor:default;}
+
+  /* Start + end screens */
+  .intro{display:grid; grid-template-columns:1fr 340px; gap:28px; align-items:start;}
+  @media (max-width:800px){ .intro{grid-template-columns:1fr;} }
+  .rules{margin:0 0 22px; padding-left:20px; color:var(--ink);}
+  .rules li{margin-bottom:6px; line-height:1.5;}
+  .points-table{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 22px;}
+  .points-table span{
+    font-size:12px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:3px 10px;
+  }
+
+  /* Scoreboard */
+  .board h3{
+    font-family:'Source Serif 4',serif;
+    font-size:20px;
+    margin:0 0 4px;
+  }
+  .board .sub{font-size:12px; color:var(--ink-soft); margin:0 0 14px;}
+  .board table{width:100%; border-collapse:collapse; font-size:14px;}
+  .board th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--ink-soft);
+    font-weight:600;
+    padding:0 6px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  .board td{padding:8px 6px; border-bottom:1px solid var(--paper-2);}
+  .board td.num, .board th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .board td.rank{color:var(--ink-soft); width:28px;}
+  .board td.name{word-break:break-word;}
+  .board tr.mine td{background:#F6E9C9; font-weight:600;}
+  .board .empty{font-size:13px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
+
+  /* Play screen */
+  .play{display:grid; grid-template-columns:300px 1fr; gap:28px; align-items:start;}
+  @media (max-width:800px){ .play{grid-template-columns:1fr;} }
+  .stage{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px;
+  }
+  @media (max-width:800px){
+    .stage{order:2;}
+    .stage svg{max-width:220px; margin:0 auto;}
+  }
+  svg{width:100%; height:auto; display:block;}
+  .muscle{
+    fill:var(--muscle);
+    stroke:var(--muscle-stroke);
+    stroke-width:0.8;
+    opacity:0.35;
+    transition:opacity 0.2s ease, fill 0.2s ease;
+  }
+  .muscle.target{
+    fill:var(--target);
+    opacity:1;
+    stroke:var(--ink);
+    stroke-width:2.5;
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse{ 50%{filter:brightness(1.25);} }
+  @media (prefers-reduced-motion:reduce){ .muscle.target{animation:none;} }
+  .skin{fill:var(--skin); stroke:var(--skin-stroke); stroke-width:1;}
+  .body-label{
+    font-family:'Inter',sans-serif;
+    font-size:9.5px;
+    fill:var(--ink-soft);
+    text-anchor:middle;
+  }
+
+  .hud{
+    display:flex;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .hud-box{
+    flex:1;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px 16px;
+  }
+  .hud-label{
+    font-size:11px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .hud-value{
+    font-family:'Source Serif 4',serif;
+    font-size:30px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .hud-value.low{color:var(--bad);}
+  .timebar{
+    height:5px;
+    background:var(--paper-2);
+    border-radius:3px;
+    margin-top:6px;
+    overflow:hidden;
+  }
+  .timebar div{height:100%; background:var(--gold); width:100%;}
+
+  .q-name{
+    font-family:'Source Serif 4',serif;
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 2px;
+  }
+  .q-latin{font-style:italic; color:var(--ink-soft); font-size:14px; margin:0 0 18px; font-family:'Source Serif 4',serif;}
+  .worth{display:flex; align-items:center; gap:10px; margin-bottom:20px; font-size:13px; color:var(--ink-soft);}
+  .pips{display:flex; gap:4px;}
+  .pips i{
+    width:16px; height:8px;
+    border-radius:2px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+  }
+  .pips i.on{background:var(--gold); border-color:var(--gold);}
+  .worth b{color:var(--ink); font-variant-numeric:tabular-nums;}
+
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    padding:11px 14px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--gold-soft); outline-offset:0; border-color:var(--gold);}
+  .field input:disabled{background:var(--paper-2); color:var(--ink-soft);}
+  .field .help{font-size:12px; color:var(--ink-soft); margin-top:5px;}
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
+
+  .feedback{
+    margin-top:20px;
+    border-radius:4px;
+    padding:12px 14px;
+    font-size:14px;
+    line-height:1.5;
+    min-height:20px;
+  }
+  .feedback:empty{display:none;}
+  .feedback.good{background:var(--good-bg); color:var(--good);}
+  .feedback.bad{background:var(--bad-bg); color:var(--bad);}
+  .feedback .fb-title{font-weight:600;}
+  .feedback .fb-ans{color:var(--ink); }
+
+  /* Results */
+  .final-score{
+    font-family:'Source Serif 4',serif;
+    font-size:64px;
+    font-weight:700;
+    line-height:1;
+    margin:4px 0 6px;
+  }
+  .stats{color:var(--ink-soft); font-size:14px; margin-bottom:22px;}
+  .save-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+  .save-row input{
+    flex:1;
+    min-width:160px;
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+  }
+  .saved-msg{font-size:13px; color:var(--good); margin:0 0 8px;}
+  .review{margin-top:26px;}
+  .review h3{font-family:'Source Serif 4',serif; font-size:18px; margin:0 0 10px;}
+  .review-item{
+    display:grid;
+    grid-template-columns:22px 1fr auto;
+    gap:8px;
+    padding:9px 0;
+    border-bottom:1px solid var(--paper-2);
+    font-size:13.5px;
+  }
+  .review-item .mark{font-weight:700;}
+  .review-item .mark.ok{color:var(--good);}
+  .review-item .mark.no{color:var(--bad);}
+  .review-item .ans{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
+  .review-item .you{color:var(--bad); font-size:12.5px;}
+  .review-item .pts{font-weight:600; font-variant-numeric:tabular-nums;}
+
+  .hidden{display:none !important;}
+  footer{text-align:center; font-size:12px; color:var(--ink-soft); margin-top:36px; font-style:italic;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Nerve Quiz</h1>
+    <p>Name the nerve and the spinal roots for each highlighted muscle</p>
+    <a class="nav-link" href="index.html">&larr; Back to the Muscle &amp; Nerve Explorer</a>
+  </header>
+
+  <!-- START -->
+  <section id="screen-start" class="intro">
+    <div class="card">
+      <div class="eyebrow">How to play</div>
+      <h2>60 seconds. As many muscles as you can.</h2>
+      <ul class="rules">
+        <li>A muscle is named and its region lights up on the figure.</li>
+        <li>Type the <b>nerve</b> that supplies it and its <b>nerve roots</b> (e.g. <i>C5, C6</i> or <i>L2&ndash;L4</i>).</li>
+        <li>Both must be right to score. Faster answers are worth more:</li>
+      </ul>
+      <div class="points-table">
+        <span>&le; 5 s &rarr; 5 pts</span><span>&le; 10 s &rarr; 4</span><span>&le; 15 s &rarr; 3</span><span>&le; 20 s &rarr; 2</span><span>slower &rarr; 1</span>
+      </div>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 22px;">Press <b>Enter</b> to move from nerve to roots and to submit. Skipping costs nothing but time. Common alternatives such as <i>peroneal / fibular</i>, <i>PIN</i>, <i>AIN</i> or <i>CN XI</i> are accepted, as are small typos.</p>
+      <button class="btn" id="btn-start">Start round</button>
+    </div>
+    <div class="card board" id="board-start"></div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="screen-play" class="play hidden">
+    <div class="stage" id="diagram"></div>
+    <div>
+      <div class="hud">
+        <div class="hud-box">
+          <div class="hud-label">Time</div>
+          <div class="hud-value" id="hud-time">60</div>
+          <div class="timebar"><div id="timebar"></div></div>
+        </div>
+        <div class="hud-box">
+          <div class="hud-label">Score</div>
+          <div class="hud-value" id="hud-score">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Identify the innervation</div>
+        <div class="q-name" id="q-name"></div>
+        <div class="q-latin" id="q-latin"></div>
+        <div class="worth"><div class="pips" id="pips"></div><span>Worth <b id="worth">5</b> if correct</span></div>
+        <form id="answer-form" autocomplete="off">
+          <div class="field">
+            <label for="in-nerve">Nerve</label>
+            <input id="in-nerve" type="text" placeholder="e.g. Axillary" autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="in-roots">Nerve roots</label>
+            <input id="in-roots" type="text" placeholder="e.g. C5, C6" autocapitalize="characters" spellcheck="false">
+            <div class="help" id="roots-help"></div>
+          </div>
+          <div class="actions">
+            <button class="btn" type="submit">Submit</button>
+            <button class="btn ghost" type="button" id="btn-skip">Skip</button>
+          </div>
+        </form>
+        <div class="feedback" id="feedback"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- END -->
+  <section id="screen-end" class="intro hidden">
+    <div class="card">
+      <div class="eyebrow">Time's up</div>
+      <div class="final-score" id="final-score">0</div>
+      <div class="stats" id="final-stats"></div>
+      <div id="save-block">
+        <label class="eyebrow" for="in-name" style="display:block">Enter your name for the scoreboard</label>
+        <form class="save-row" id="save-form">
+          <input id="in-name" type="text" maxlength="24" placeholder="Your name" autocomplete="nickname">
+          <button class="btn" type="submit">Save score</button>
+        </form>
+      </div>
+      <p class="saved-msg hidden" id="saved-msg"></p>
+      <div class="actions">
+        <button class="btn ghost" id="btn-again">Play again</button>
+      </div>
+      <div class="review" id="review"></div>
+    </div>
+    <div class="card board" id="board-end"></div>
+  </section>
+
+  <footer>For educational reference only. Accepted answers follow the Muscle &amp; Nerve Explorer's reference data.</footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+const ROUND_SECONDS = 60;
+const STORE_KEY = 'myoman.scoreboard.v1';
+const NAME_KEY = 'myoman.lastName';
+
+/* ---------- Answer checking ---------- */
+
+const STOP_WORDS = new Set(['nerve','nerves','n','branch','branches','of','the','and','division','div','br','from','a','with','its']);
+function normNerve(str){
+  return String(str).toLowerCase()
+    .replace(/peroneal/g,'fibular')
+    .replace(/[^a-z0-9 ]+/g,' ')
+    .split(/\s+/).filter(w => w && !STOP_WORDS.has(w)).join(' ');
+}
+
+// Names accepted for every muscle supplied by a given nerve.
+const NERVE_ALIASES = {
+  "axillary":["axillary"],
+  "musculocutaneous":["musculocutaneous"],
+  "radial":["radial","deep radial"],
+  "median":["median"],
+  "ulnar":["ulnar"],
+  "suprascapular":["suprascapular"],
+  "dorsal-scapular":["dorsal scapular"],
+  "long-thoracic":["long thoracic","nerve of bell"],
+  "thoracodorsal":["thoracodorsal","middle subscapular"],
+  "lower-subscapular":["lower subscapular","inferior subscapular"],
+  "pectoral":["pectoral","medial pectoral","lateral pectoral","medial and lateral pectoral","lateral and medial pectoral"],
+  "phrenic":["phrenic"],
+  "thoracoabdominal":["thoracoabdominal","intercostal","intercostals","lower intercostal","thoracoabdominal and subcostal","intercostal and subcostal"],
+  "accessory":["accessory","spinal accessory","cn xi","cn 11","cnxi","cn11","cranial nerve xi","cranial nerve 11","xi"],
+  "posterior-rami":["posterior rami","dorsal rami","posterior ramus","dorsal ramus","posterior rami of spinal nerves","dorsal rami of spinal nerves"],
+  "femoral":["femoral"],
+  "obturator":["obturator"],
+  "deep-fibular":["deep fibular"],
+  "tibial":["tibial","sciatic","tibial division of sciatic","sciatic tibial division"],
+  "inferior-gluteal":["inferior gluteal"],
+  "superior-gluteal":["superior gluteal"],
+  "lumbar-plexus":["lumbar plexus","direct branches of lumbar plexus","lumbar plexus direct branches","ventral rami"],
+  "superficial-fibular":["superficial fibular"]
+};
+
+// Specific branch names: accepted when they appear in that muscle's own reference answer.
+const BRANCHES = [
+  {find:"posterior interosseous", accept:["posterior interosseous","pin"]},
+  {find:"anterior interosseous",  accept:["anterior interosseous","ain","median anterior interosseous"]},
+  {find:"recurrent thenar",       accept:["recurrent thenar","recurrent median","thenar","recurrent","median recurrent"]},
+  {find:"ulnar deep",             accept:["deep ulnar","ulnar deep"]},
+  {find:"medial plantar",         accept:["medial plantar"]},
+  {find:"lateral plantar",        accept:["lateral plantar"]},
+  {find:"common fibular",         accept:["common fibular"]},
+  {find:"musculocutaneous",       accept:["musculocutaneous"]},
+  {find:"radial",                 accept:["radial"]},
+  {find:"median",                 accept:["median"]},
+  {find:"ulnar",                  accept:["ulnar"]},
+  {find:"sciatic",                accept:["sciatic"]}
+];
+
+function acceptedNerves(id){
+  const m = muscleDetails[id];
+  const ref = normNerve(m.nerve);
+  const set = new Set([ref]);
+  (NERVE_ALIASES[muscleNerveKey[id]] || []).forEach(a => set.add(normNerve(a)));
+  BRANCHES.forEach(b => {
+    if((' '+ref+' ').includes(' '+b.find+' ')) b.accept.forEach(a => set.add(normNerve(a)));
+  });
+  set.delete('');
+  return [...set];
+}
+
+function editDistance(a, b){
+  const dp = Array.from({length:a.length+1}, (_, i) => [i]);
+  for(let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for(let i = 1; i <= a.length; i++){
+    for(let j = 1; j <= b.length; j++){
+      dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+function nerveCorrect(id, input){
+  const guess = normNerve(input);
+  if(!guess) return false;
+  return acceptedNerves(id).some(a => {
+    if(a === guess) return true;
+    const tol = a.length >= 12 ? 2 : a.length >= 6 ? 1 : 0;
+    return tol > 0 && editDistance(a, guess) <= tol;
+  });
+}
+
+// Spinal levels in order, so ranges like C5–T1 can be expanded.
+const LEVELS = [];
+[['C',8],['T',12],['L',5],['S',5]].forEach(([p,n]) => { for(let i=1;i<=n;i++) LEVELS.push(p+i); });
+
+function parseRoots(str){
+  const s = String(str).toUpperCase()
+    .replace(/[‐-―−~]/g,'-')
+    .replace(/\b(TO|THRU|THROUGH)\b/g,'-');
+  const re = /([CTLS])\s*(\d{1,2})|(\d{1,2})|(-)/g;
+  const items = [];
+  let letter = null, mt;
+  while((mt = re.exec(s))){
+    if(mt[4]){ items.push('-'); continue; }
+    if(mt[1]) letter = mt[1];
+    if(!letter) return null;
+    const idx = LEVELS.indexOf(letter + parseInt(mt[1] ? mt[2] : mt[3], 10));
+    if(idx < 0) return null;
+    items.push(idx);
+  }
+  const out = new Set();
+  for(let i = 0; i < items.length; i++){
+    const it = items[i];
+    if(it === '-') continue;
+    if(items[i-1] === '-' && typeof items[i-2] === 'number'){
+      const a = Math.min(items[i-2], it), b = Math.max(items[i-2], it);
+      for(let k = a; k <= b; k++) out.add(k);
+    } else {
+      out.add(it);
+    }
+  }
+  return out.size ? out : null;
+}
+function sameSet(a, b){ return a && b && a.size === b.size && [...a].every(x => b.has(x)); }
+
+// Root answers that cannot be typed as a list of levels are not tested.
+const ROOTS_NOT_TESTED = new Set(['trapezius','erector-spinae']);
+const ROOTS_EXTRA = { 'rectus-abdominis': ['T7-T11','T7-T12'] };
+function acceptedRoots(id){
+  if(ROOTS_NOT_TESTED.has(id)) return null;
+  const list = [muscleDetails[id].roots, ...(ROOTS_EXTRA[id] || [])];
+  return list.map(parseRoots).filter(Boolean);
+}
+function rootsCorrect(id, input){
+  const acc = acceptedRoots(id);
+  if(!acc) return true;
+  const guess = parseRoots(input);
+  return acc.some(a => sameSet(a, guess));
+}
+
+/* ---------- Diagram ---------- */
+
+document.getElementById('diagram').innerHTML = BODY_SVG;
+const svgRoot = document.querySelector('#diagram svg');
+
+function regionFor(id){
+  if(svgRoot.querySelector(`.muscle[data-id="${id}"]`)) return id;
+  return Object.keys(compartments).find(c => compartments[c].muscles.includes(id)) || null;
+}
+function showTarget(id){
+  const region = regionFor(id);
+  let view = 'front';
+  svgRoot.querySelectorAll('.muscle').forEach(el => {
+    const hit = el.getAttribute('data-id') === region;
+    el.classList.toggle('target', hit);
+    if(hit && el.closest('#view-back')) view = 'back';
+  });
+  document.getElementById('view-front').style.display = view === 'front' ? 'block' : 'none';
+  document.getElementById('view-back').style.display = view === 'back' ? 'block' : 'none';
+}
+
+/* ---------- Scoreboard ---------- */
+
+function loadScores(){
+  try{ const v = JSON.parse(localStorage.getItem(STORE_KEY)); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveScores(list){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderBoard(el, highlightTs){
+  const scores = loadScores().sort((a,b) => b.score - a.score || a.ts - b.ts).slice(0, 10);
+  const rows = scores.map((s, i) => `
+    <tr class="${s.ts === highlightTs ? 'mine' : ''}">
+      <td class="rank">${i+1}</td>
+      <td class="name">${esc(s.name)}</td>
+      <td class="num">${s.correct}/${s.answered}</td>
+      <td class="num"><b>${s.score}</b></td>
+    </tr>`).join('');
+  el.innerHTML = `
+    <h3>Scoreboard</h3>
+    <p class="sub">Top 10 scores saved in this browser</p>
+    ${scores.length ? `<table>
+      <thead><tr><th></th><th>Name</th><th class="num">Right</th><th class="num">Pts</th></tr></thead>
+      <tbody>${rows}</tbody></table>` : `<div class="empty">No scores yet. Be the first.</div>`}
+  `;
+}
+
+/* ---------- Game ---------- */
+
+const POOL = Object.keys(muscleDetails);
+let deck = [], current = null, qStart = 0, endAt = 0, tick = null;
+let score = 0, history = [], lastSavedTs = null;
+
+const $ = id => document.getElementById(id);
+function show(screen){
+  ['start','play','end'].forEach(s => $('screen-'+s).classList.toggle('hidden', s !== screen));
+}
+function shuffle(a){
+  for(let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; }
+  return a;
+}
+function pointsFor(seconds){
+  if(seconds <= 5) return 5;
+  if(seconds <= 10) return 4;
+  if(seconds <= 15) return 3;
+  if(seconds <= 20) return 2;
+  return 1;
+}
+
+function startRound(){
+  deck = shuffle(POOL.slice());
+  score = 0; history = []; lastSavedTs = null;
+  $('hud-score').textContent = '0';
+  $('feedback').textContent = '';
+  $('feedback').className = 'feedback';
+  show('play');
+  endAt = performance.now() + ROUND_SECONDS*1000;
+  nextQuestion();
+  clearInterval(tick);
+  tick = setInterval(update, 100);
+  update();
+}
+
+function nextQuestion(){
+  if(!deck.length) deck = shuffle(POOL.slice());
+  current = deck.pop();
+  const m = muscleDetails[current];
+  $('q-name').textContent = m.name;
+  $('q-latin').textContent = m.latin;
+  $('in-nerve').value = '';
+  $('in-roots').value = '';
+  const rootsTested = !ROOTS_NOT_TESTED.has(current);
+  $('in-roots').disabled = !rootsTested;
+  $('in-roots').placeholder = rootsTested ? 'e.g. C5, C6' : 'Not tested for this muscle';
+  $('roots-help').textContent = rootsTested ? 'Ranges like C5-C7 or C5-7 are fine.' : 'Just name the nerve for this one.';
+  showTarget(current);
+  qStart = performance.now();
+  $('in-nerve').focus();
+}
+
+function update(){
+  const now = performance.now();
+  const left = Math.max(0, (endAt - now) / 1000);
+  $('hud-time').textContent = Math.ceil(left);
+  $('hud-time').classList.toggle('low', left <= 10);
+  $('timebar').style.width = (left / ROUND_SECONDS * 100) + '%';
+  const worth = pointsFor((now - qStart) / 1000);
+  $('worth').textContent = worth;
+  $('pips').innerHTML = [1,2,3,4,5].map(i => `<i class="${i <= worth ? 'on' : ''}"></i>`).join('');
+  if(left <= 0) endRound();
+}
+
+function submitAnswer(skipped){
+  if(!current) return;
+  const elapsed = (performance.now() - qStart) / 1000;
+  const nerveIn = $('in-nerve').value.trim();
+  const rootsIn = $('in-roots').value.trim();
+  const m = muscleDetails[current];
+  const nOk = !skipped && nerveCorrect(current, nerveIn);
+  const rOk = !skipped && rootsCorrect(current, rootsIn);
+  const ok = nOk && rOk;
+  const pts = ok ? pointsFor(elapsed) : 0;
+  score += pts;
+  $('hud-score').textContent = score;
+  history.push({id:current, ok, skipped, pts, nerveIn, rootsIn, nOk, rOk});
+
+  const fb = $('feedback');
+  const answer = `<span class="fb-ans">${esc(m.nerve)} &middot; ${esc(m.roots)}</span>`;
+  if(ok){
+    fb.className = 'feedback good';
+    fb.innerHTML = `<div class="fb-title">&#10003; ${esc(m.name)}: +${pts}</div>${answer}`;
+  } else {
+    const what = skipped ? 'skipped' : (!nOk && !rOk ? 'nerve and roots wrong' : !nOk ? 'nerve wrong' : 'roots wrong');
+    fb.className = 'feedback bad';
+    fb.innerHTML = `<div class="fb-title">&#10007; ${esc(m.name)}: ${what}</div>${answer}`;
+  }
+  nextQuestion();
+}
+
+function endRound(){
+  clearInterval(tick);
+  current = null;
+  const answered = history.length;
+  const correct = history.filter(h => h.ok).length;
+  $('final-score').textContent = score;
+  $('final-stats').textContent = `${correct} correct out of ${answered} attempted` +
+    (answered ? ` (${Math.round(correct/answered*100)}%)` : '');
+  $('save-block').classList.remove('hidden');
+  $('saved-msg').classList.add('hidden');
+  let last = '';
+  try{ last = localStorage.getItem(NAME_KEY) || ''; }catch(e){}
+  $('in-name').value = last;
+  renderReview();
+  renderBoard($('board-end'));
+  show('end');
+  $('in-name').focus();
+}
+
+function renderReview(){
+  if(!history.length){ $('review').innerHTML = ''; return; }
+  $('review').innerHTML = `<h3>This round</h3>` + history.map(h => {
+    const m = muscleDetails[h.id];
+    let you = '';
+    if(!h.ok && !h.skipped){
+      you = `<div class="you">You: ${esc(h.nerveIn || '(blank)')}${ROOTS_NOT_TESTED.has(h.id) ? '' : ' &middot; ' + esc(h.rootsIn || '(blank)')}</div>`;
+    }
+    return `<div class="review-item">
+      <span class="mark ${h.ok ? 'ok' : 'no'}">${h.ok ? '&#10003;' : '&#10007;'}</span>
+      <div><div>${esc(m.name)}${h.skipped ? ' <i>(skipped)</i>' : ''}</div>
+        <div class="ans">${esc(m.nerve)} &middot; ${esc(m.roots)}</div>${you}</div>
+      <span class="pts">${h.pts ? '+'+h.pts : ''}</span>
+    </div>`;
+  }).join('');
+}
+
+$('btn-start').addEventListener('click', startRound);
+$('btn-again').addEventListener('click', startRound);
+$('btn-skip').addEventListener('click', () => submitAnswer(true));
+$('answer-form').addEventListener('submit', e => {
+  e.preventDefault();
+  if(document.activeElement === $('in-nerve') && !$('in-roots').disabled && !$('in-roots').value.trim()){
+    $('in-roots').focus();
+    return;
+  }
+  submitAnswer(false);
+});
+$('save-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('in-name').value.trim().slice(0, 24) || 'Anonymous';
+  const entry = {name, score, correct: history.filter(h => h.ok).length, answered: history.length, ts: Date.now()};
+  const list = loadScores();
+  list.push(entry);
+  const ok = saveScores(list);
+  try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
+  lastSavedTs = entry.ts;
+  $('save-block').classList.add('hidden');
+  $('saved-msg').textContent = ok ? `Saved ${name}'s score of ${score}.` : 'This browser blocked saving, so the score could not be stored.';
+  $('saved-msg').classList.remove('hidden');
+  renderBoard($('board-end'), entry.ts);
+  renderBoard($('board-start'));
+});
+
+renderBoard($('board-start'));
+</script>
+</body>
+</html>
