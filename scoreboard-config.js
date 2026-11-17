@@ -10,5 +10,5 @@
 
 const SCOREBOARD_CONFIG = {
   url: 'https://zuhkndfzxuuflzgplody.supabase.co',
-  anonKey: ''
+  anonKey: 'sb_publishable_a9_mHsHKoh5ahzUkBmPMKQ_72f4pLH4'
 };
