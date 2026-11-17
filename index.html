@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muscle & Nerve Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2ECDD;
+    --paper-2:#EAE2CE;
+    --ink:#232821;
+    --ink-soft:#615F51;
+    --line:#C9BFA4;
+    --panel:#FBF8F0;
+    --muscle:#9B4636;
+    --muscle-hover:#B85A44;
+    --muscle-active:#C4623C;
+    --muscle-stroke:#6E2F24;
+    --skin:#DAD2BA;
+    --skin-stroke:#B9AE8E;
+    --gold:#96702C;
+    --gold-soft:#B9915A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:36px 24px 60px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+  }
+  h1{
+    font-family:'Source Serif 4',serif;
+    font-weight:700;
+    font-size:34px;
+    margin:0 0 6px;
+    letter-spacing:0.2px;
+  }
+  header p{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0;
+    font-style:italic;
+    font-family:'Source Serif 4',serif;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:800px){
+    .layout{grid-template-columns:1fr;}
+  }
+  .stage{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 18px 22px;
+  }
+  .view-toggle{
+    display:flex;
+    justify-content:center;
+    gap:0;
+    margin-bottom:14px;
+    border:1px solid var(--gold-soft);
+    border-radius:20px;
+    overflow:hidden;
+    width:fit-content;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .view-toggle button{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    padding:7px 20px;
+    border:none;
+    background:transparent;
+    color:var(--gold);
+    cursor:pointer;
+    letter-spacing:0.3px;
+  }
+  .view-toggle button.active{
+    background:var(--gold);
+    color:var(--panel);
+  }
+  svg{width:100%;height:auto;display:block;}
+  .muscle{
+    stroke:var(--muscle-stroke);
+    stroke-width:1;
+    cursor:pointer;
+    transition:filter 0.15s ease, opacity 0.2s ease, stroke-width 0.15s ease;
+  }
+  .muscle:hover{filter:brightness(1.14);}
+  .muscle.active{stroke:var(--ink); stroke-width:2.5; filter:brightness(1.05);}
+  .muscle.dimmed{opacity:0.15;}
+  .skin{fill:var(--skin); stroke:var(--skin-stroke); stroke-width:1;}
+  .body-label{
+    font-family:'Inter',sans-serif;
+    font-size:9.5px;
+    fill:var(--ink-soft);
+    text-anchor:middle;
+    pointer-events:none;
+  }
+  .hint{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    font-style:italic;
+    font-family:'Source Serif 4',serif;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px 32px;
+    min-height:420px;
+  }
+  .panel-empty{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:420px;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  .panel-empty .big{
+    font-family:'Source Serif 4',serif;
+    font-size:20px;
+    color:var(--ink);
+    margin-bottom:8px;
+  }
+  .panel-empty .small{
+    font-size:13px;
+    max-width:320px;
+    line-height:1.6;
+  }
+  .m-eyebrow{
+    font-size:11px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    color:var(--gold);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .m-name{
+    font-family:'Source Serif 4',serif;
+    font-weight:700;
+    font-size:30px;
+    margin:0 0 2px;
+    line-height:1.1;
+  }
+  .m-latin{
+    font-family:'Source Serif 4',serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--ink-soft);
+    margin:0 0 22px;
+  }
+  .m-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:20px;
+  }
+  .m-card{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:14px 16px;
+  }
+  .m-card.wide{grid-column:1 / -1;}
+  .m-label{
+    font-size:11px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+    font-weight:500;
+  }
+  .m-value{
+    font-size:16px;
+    font-weight:600;
+    color:var(--muscle-stroke);
+  }
+  .m-value.roots{
+    font-family:'Inter',sans-serif;
+    letter-spacing:0.5px;
+  }
+  .m-desc{
+    font-size:14.5px;
+    line-height:1.7;
+    color:var(--ink);
+  }
+  .m-desc p{margin:0 0 10px;}
+  .m-desc p:last-child{margin-bottom:0;}
+  .m-desc strong{color:var(--muscle-stroke);}
+  footer{
+    text-align:center;
+    margin-top:30px;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .m-blurb{
+    font-size:14px;
+    line-height:1.65;
+    color:var(--ink-soft);
+    margin:0 0 20px;
+  }
+  .chip-label{
+    font-size:11px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+    font-weight:500;
+  }
+  .chip-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    padding:8px 14px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:16px;
+    color:var(--muscle-stroke);
+    cursor:pointer;
+    text-align:left;
+  }
+  .chip:hover{
+    border-color:var(--muscle-stroke);
+    background:var(--panel);
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--gold);
+    cursor:pointer;
+    margin-bottom:18px;
+    background:none;
+    border:none;
+    padding:0;
+    font-family:'Inter',sans-serif;
+  }
+  .back-link:hover{text-decoration:underline;}
+  .comp-tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.3px;
+    color:var(--gold);
+    background:var(--paper-2);
+    border:1px solid var(--gold-soft);
+    border-radius:10px;
+    padding:2px 10px;
+    margin-bottom:10px;
+  }
+  .legend{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .legend-title{
+    font-size:11px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-bottom:10px;
+    text-align:center;
+  }
+  .legend-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:5px 10px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:11px;
+    color:var(--ink);
+    cursor:pointer;
+    background:none;
+    border:1px solid transparent;
+    border-radius:4px;
+    padding:3px 5px;
+    text-align:left;
+    font-family:'Inter',sans-serif;
+  }
+  .legend-item:hover{background:var(--paper);}
+  .legend-item.legend-active{
+    border-color:var(--gold-soft);
+    background:var(--panel);
+    font-weight:600;
+  }
+  .legend-swatch{
+    width:12px;
+    height:12px;
+    border-radius:3px;
+    flex-shrink:0;
+    border:1px solid rgba(0,0,0,0.15);
+  }
+  .nerve-swatch{
+    display:inline-block;
+    width:11px;
+    height:11px;
+    border-radius:3px;
+    margin-right:7px;
+    vertical-align:-1px;
+    border:1px solid rgba(0,0,0,0.15);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Muscle &amp; Nerve Explorer</h1>
+    <p>An interactive reference for major muscle groups and their nerve supply</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="view-toggle">
+        <button id="btn-front" class="active" onclick="setView('front')">Anterior</button>
+        <button id="btn-back" onclick="setView('back')">Posterior</button>
+      </div>
+
+      <svg viewBox="0 0 320 640" role="img" aria-label="Interactive body diagram">
+        <defs>
+          <linearGradient id="grad-anterior-forearm" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#B85C3A"/>
+            <stop offset="68%" stop-color="#B85C3A"/>
+            <stop offset="84%" stop-color="#8C3F32"/>
+            <stop offset="100%" stop-color="#8C3F32"/>
+          </linearGradient>
+          <linearGradient id="grad-hand-intrinsics" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#B85C3A"/>
+            <stop offset="42%" stop-color="#B85C3A"/>
+            <stop offset="58%" stop-color="#8C3F32"/>
+            <stop offset="100%" stop-color="#8C3F32"/>
+          </linearGradient>
+          <linearGradient id="grad-rotator-cuff" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#CC5A45"/>
+            <stop offset="62%" stop-color="#CC5A45"/>
+            <stop offset="78%" stop-color="#A6323B"/>
+            <stop offset="100%" stop-color="#A6323B"/>
+          </linearGradient>
+          <linearGradient id="grad-iliopsoas" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#96461F"/>
+            <stop offset="48%" stop-color="#96461F"/>
+            <stop offset="60%" stop-color="#DE8B4A"/>
+            <stop offset="100%" stop-color="#DE8B4A"/>
+          </linearGradient>
+          <linearGradient id="grad-foot-intrinsics" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7F4B3A"/>
+            <stop offset="82%" stop-color="#7F4B3A"/>
+            <stop offset="92%" stop-color="#C24632"/>
+            <stop offset="100%" stop-color="#C24632"/>
+          </linearGradient>
+        </defs>
+        <g id="view-front">
+          <ellipse class="skin" cx="160" cy="45" rx="26" ry="30"/>
+          <rect class="skin" x="146" y="70" width="28" height="16" rx="5"/>
+          <polygon class="skin" points="100,90 220,90 228,188 210,298 110,298 92,188"/>
+          <rect class="skin" x="55" y="95" width="34" height="112" rx="16"/>
+          <rect class="skin" x="231" y="95" width="34" height="112" rx="16"/>
+          <rect class="skin" x="58" y="207" width="30" height="98" rx="14"/>
+          <rect class="skin" x="232" y="207" width="30" height="98" rx="14"/>
+          <ellipse class="skin" cx="73" cy="318" rx="13" ry="16"/>
+          <ellipse class="skin" cx="247" cy="318" rx="13" ry="16"/>
+          <polygon class="skin" points="110,298 210,298 220,338 100,338"/>
+          <rect class="skin" x="112" y="335" width="96" height="95" rx="14"/>
+          <rect class="skin" x="99" y="465" width="47" height="115" rx="14"/>
+          <rect class="skin" x="174" y="465" width="47" height="115" rx="14"/>
+          <ellipse class="skin" cx="128" cy="598" rx="20" ry="11"/>
+          <ellipse class="skin" cx="192" cy="598" rx="20" ry="11"/>
+
+          <ellipse class="muscle" data-id="deltoid" cx="95" cy="106" rx="22" ry="26"/>
+          <ellipse class="muscle" data-id="deltoid" cx="225" cy="106" rx="22" ry="26"/>
+          <rect class="muscle" data-id="serratus-anterior" x="94" y="128" width="15" height="66" rx="6"/>
+          <rect class="muscle" data-id="serratus-anterior" x="211" y="128" width="15" height="66" rx="6"/>
+          <rect class="muscle" data-id="pec-major" x="112" y="95" width="96" height="55" rx="20"/>
+          <rect class="muscle" data-id="diaphragm" x="120" y="149" width="80" height="9" rx="4"/>
+          <ellipse class="muscle" data-id="anterior-arm" cx="72" cy="150" rx="15" ry="46"/>
+          <ellipse class="muscle" data-id="anterior-arm" cx="248" cy="150" rx="15" ry="46"/>
+          <ellipse class="muscle" data-id="anterior-forearm" cx="73" cy="258" rx="13" ry="46"/>
+          <ellipse class="muscle" data-id="anterior-forearm" cx="247" cy="258" rx="13" ry="46"/>
+          <ellipse class="muscle" data-id="hand-intrinsics" cx="73" cy="318" rx="11" ry="14"/>
+          <ellipse class="muscle" data-id="hand-intrinsics" cx="247" cy="318" rx="11" ry="14"/>
+          <rect class="muscle" data-id="rectus-abdominis" x="133" y="160" width="54" height="84" rx="10"/>
+          <rect class="muscle" data-id="obliques" x="100" y="164" width="28" height="80" rx="10"/>
+          <rect class="muscle" data-id="obliques" x="192" y="164" width="28" height="80" rx="10"/>
+          <ellipse class="muscle" data-id="iliopsoas" cx="128" cy="270" rx="16" ry="18"/>
+          <ellipse class="muscle" data-id="iliopsoas" cx="192" cy="270" rx="16" ry="18"/>
+          <ellipse class="muscle" data-id="tfl" cx="100" cy="335" rx="8" ry="18"/>
+          <ellipse class="muscle" data-id="tfl" cx="220" cy="335" rx="8" ry="18"/>
+          <ellipse class="muscle" data-id="quadriceps" cx="128" cy="398" rx="24" ry="70"/>
+          <ellipse class="muscle" data-id="quadriceps" cx="192" cy="398" rx="24" ry="70"/>
+          <rect class="muscle" data-id="adductors" x="148" y="343" width="24" height="88" rx="12"/>
+          <rect class="muscle" data-id="peroneals" x="99" y="470" width="12" height="110" rx="6"/>
+          <rect class="muscle" data-id="peroneals" x="209" y="470" width="12" height="110" rx="6"/>
+          <ellipse class="muscle" data-id="anterior-leg" cx="128" cy="520" rx="13" ry="52"/>
+          <ellipse class="muscle" data-id="anterior-leg" cx="192" cy="520" rx="13" ry="52"/>
+          <ellipse class="muscle" data-id="foot-intrinsics" cx="128" cy="598" rx="17" ry="9"/>
+          <ellipse class="muscle" data-id="foot-intrinsics" cx="192" cy="598" rx="17" ry="9"/>
+
+          <text class="body-label" x="160" y="66">Anterior view</text>
+        </g>
+
+        <g id="view-back" style="display:none;">
+          <ellipse class="skin" cx="160" cy="45" rx="26" ry="30"/>
+          <rect class="skin" x="146" y="70" width="28" height="16" rx="5"/>
+          <polygon class="skin" points="100,90 220,90 228,188 210,298 110,298 92,188"/>
+          <rect class="skin" x="55" y="95" width="34" height="112" rx="16"/>
+          <rect class="skin" x="231" y="95" width="34" height="112" rx="16"/>
+          <rect class="skin" x="58" y="207" width="30" height="98" rx="14"/>
+          <rect class="skin" x="232" y="207" width="30" height="98" rx="14"/>
+          <ellipse class="skin" cx="73" cy="318" rx="13" ry="16"/>
+          <ellipse class="skin" cx="247" cy="318" rx="13" ry="16"/>
+          <polygon class="skin" points="110,298 210,298 220,338 100,338"/>
+          <rect class="skin" x="112" y="335" width="96" height="95" rx="14"/>
+          <rect class="skin" x="112" y="465" width="34" height="115" rx="14"/>
+          <rect class="skin" x="174" y="465" width="34" height="115" rx="14"/>
+          <ellipse class="skin" cx="128" cy="598" rx="20" ry="11"/>
+          <ellipse class="skin" cx="192" cy="598" rx="20" ry="11"/>
+
+          <polygon class="muscle" data-id="trapezius" points="160,78 206,112 188,172 132,172 114,112"/>
+          <path class="muscle" data-id="lat-dorsi" d="M96,140 C90,175 92,215 108,235 L136,235 C126,200 122,165 128,140 Z"/>
+          <path class="muscle" data-id="lat-dorsi" d="M224,140 C230,175 228,215 212,235 L184,235 C194,200 198,165 192,140 Z"/>
+          <rect class="muscle" data-id="rhomboids" x="138" y="138" width="44" height="34" rx="8"/>
+          <ellipse class="muscle" data-id="rotator-cuff" cx="98" cy="112" rx="15" ry="19"/>
+          <ellipse class="muscle" data-id="rotator-cuff" cx="222" cy="112" rx="15" ry="19"/>
+          <ellipse class="muscle" data-id="teres-major" cx="97" cy="148" rx="12" ry="18"/>
+          <ellipse class="muscle" data-id="teres-major" cx="223" cy="148" rx="12" ry="18"/>
+          <rect class="muscle" data-id="erector-spinae" x="146" y="178" width="28" height="122" rx="10"/>
+          <ellipse class="muscle" data-id="triceps" cx="72" cy="150" rx="15" ry="46"/>
+          <ellipse class="muscle" data-id="triceps" cx="248" cy="150" rx="15" ry="46"/>
+          <ellipse class="muscle" data-id="posterior-forearm" cx="73" cy="258" rx="13" ry="46"/>
+          <ellipse class="muscle" data-id="posterior-forearm" cx="247" cy="258" rx="13" ry="46"/>
+          <ellipse class="muscle" data-id="glute-med-min" cx="95" cy="285" rx="14" ry="18"/>
+          <ellipse class="muscle" data-id="glute-med-min" cx="225" cy="285" rx="14" ry="18"/>
+          <ellipse class="muscle" data-id="glute-max" cx="130" cy="315" rx="32" ry="34"/>
+          <ellipse class="muscle" data-id="glute-max" cx="190" cy="315" rx="32" ry="34"/>
+          <ellipse class="muscle" data-id="hamstrings" cx="128" cy="398" rx="24" ry="70"/>
+          <ellipse class="muscle" data-id="hamstrings" cx="192" cy="398" rx="24" ry="70"/>
+          <ellipse class="muscle" data-id="posterior-leg" cx="128" cy="516" rx="15" ry="50"/>
+          <ellipse class="muscle" data-id="posterior-leg" cx="192" cy="516" rx="15" ry="50"/>
+
+          <text class="body-label" x="160" y="66">Posterior view</text>
+        </g>
+      </svg>
+      <p class="hint">Click any muscle group to isolate it. Colors indicate innervating nerve.</p>
+      <div class="legend" id="legend">
+        <div class="legend-title">Color key &mdash; nerve supply</div>
+        <div class="legend-grid" id="legend-grid"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="panel-empty" id="panel-empty">
+        <div class="big">Select a muscle group</div>
+        <div class="small">Click any region on the figure to see its name, nerve supply, spinal nerve roots, and primary actions. Switch between anterior and posterior views using the toggle above the figure.</div>
+      </div>
+      <div id="panel-content" style="display:none;"></div>
+    </div>
+  </div>
+
+  <footer>For educational reference only. Muscle boundaries are stylized, not anatomically exact.</footer>
+</div>
+
+<script>
+const muscleDetails = {
+  "deltoid": {
+    name: "Deltoid",
+    latin: "Musculus deltoideus",
+    nerve: "Axillary nerve",
+    roots: "C5, C6",
+    action: "Abducts, flexes, extends, and rotates the arm at the shoulder.",
+    note: "Wraps the shoulder like an epaulette. The axillary nerve also supplies sensation to a small patch of skin over the muscle, which is why deltoid numbness can be an early sign of axillary nerve injury after a shoulder dislocation."
+  },
+  "pec-major": {
+    name: "Pectoralis major",
+    latin: "Musculus pectoralis major",
+    nerve: "Medial and lateral pectoral nerves",
+    roots: "C5\u2013T1",
+    action: "Adducts and medially rotates the arm; flexes the shoulder.",
+    note: "Fed by two nerves that sandwich it from either side, the medial and lateral pectoral nerves are named for the trunks they arise from in the brachial plexus, not the muscle's own geography."
+  },
+  "diaphragm": {
+    name: "Diaphragm",
+    latin: "Musculus diaphragma",
+    nerve: "Phrenic nerve",
+    roots: "C3\u2013C5",
+    action: "Primary muscle of inspiration; flattens on contraction to expand the thoracic cavity.",
+    note: "The mnemonic \u201cC3, 4, 5 keep the diaphragm alive\u201d reflects why a high cervical spinal cord injury above C3 is immediately fatal without ventilatory support, while an injury below C5 usually spares breathing."
+  },
+  "serratus-anterior": {
+    name: "Serratus anterior",
+    latin: "Musculus serratus anterior",
+    nerve: "Long thoracic nerve",
+    roots: "C5\u2013C7",
+    action: "Protracts the scapula and rotates it upward; holds the scapula flush against the rib cage.",
+    note: "The long thoracic nerve runs a long, exposed course along the chest wall, making it vulnerable during axillary surgery. Damage produces a classic \u2018winged scapula.\u2019"
+  },
+  "rhomboids": {
+    name: "Rhomboids",
+    latin: "Musculi rhomboidei major et minor",
+    nerve: "Dorsal scapular nerve",
+    roots: "C4, C5",
+    action: "Retract the scapula and rotate it downward, drawing the shoulder blade toward the spine.",
+    note: "Work as trapezius's antagonist for scapular rotation \u2014 trapezius rotates the scapula upward for overhead reaching, rhomboids pull it back down."
+  },
+  "biceps-brachii": {
+    name: "Biceps brachii",
+    latin: "Musculus biceps brachii",
+    nerve: "Musculocutaneous nerve",
+    roots: "C5, C6",
+    action: "Flexes the elbow and supinates the forearm.",
+    note: "The musculocutaneous nerve pierces coracobrachialis, runs down between biceps and brachialis, then continues into the forearm as the lateral cutaneous nerve of the forearm."
+  },
+  "coracobrachialis": {
+    name: "Coracobrachialis",
+    latin: "Musculus coracobrachialis",
+    nerve: "Musculocutaneous nerve",
+    roots: "C5\u2013C7",
+    action: "Flexes and adducts the arm at the shoulder.",
+    note: "The only muscle the musculocutaneous nerve pierces directly, which makes it the classic landmark for identifying that nerve in cadaveric dissection."
+  },
+  "brachialis": {
+    name: "Brachialis",
+    latin: "Musculus brachialis",
+    nerve: "Musculocutaneous nerve, with a small contribution from the radial nerve",
+    roots: "C5, C6",
+    action: "The main workhorse flexor of the elbow, acting regardless of forearm position.",
+    note: "Sits deep to biceps and gets a lateral sliver of radial nerve supply \u2014 unusual for a 'flexor' muscle, since radial nerve territory is normally extensor territory."
+  },
+  "teres-minor": {
+    name: "Teres minor",
+    latin: "Musculus teres minor",
+    nerve: "Axillary nerve",
+    roots: "C5, C6",
+    action: "Laterally rotates the arm at the shoulder.",
+    note: "One of the four rotator cuff muscles (SITS: Supraspinatus, Infraspinatus, Teres minor, Subscapularis). It shares its nerve with deltoid, not with the other cuff muscles."
+  },
+  "supraspinatus": {
+    name: "Supraspinatus",
+    latin: "Musculus supraspinatus",
+    nerve: "Suprascapular nerve",
+    roots: "C5, C6",
+    action: "Initiates the first ~15\u00b0 of shoulder abduction and stabilizes the humeral head in the socket.",
+    note: "The most commonly torn rotator cuff muscle, partly because its tendon passes through the narrow subacromial space, which can pinch it during overhead motion."
+  },
+  "infraspinatus": {
+    name: "Infraspinatus",
+    latin: "Musculus infraspinatus",
+    nerve: "Suprascapular nerve",
+    roots: "C5, C6",
+    action: "Laterally rotates the arm at the shoulder.",
+    note: "Shares the suprascapular nerve with supraspinatus; the nerve reaches infraspinatus by passing through the spinoglenoid notch after already supplying supraspinatus."
+  },
+  "teres-major": {
+    name: "Teres major",
+    latin: "Musculus teres major",
+    nerve: "Lower subscapular nerve",
+    roots: "C5\u2013C7",
+    action: "Adducts and medially rotates the arm.",
+    note: "Nicknamed \u2018lat's little helper\u2019 \u2014 it mimics latissimus dorsi's actions almost exactly, even though it is not part of the rotator cuff and has a different nerve supply."
+  },
+  "extensor-carpi-radialis-longus": {
+    name: "Extensor carpi radialis longus",
+    latin: "Musculus extensor carpi radialis longus",
+    nerve: "Radial nerve",
+    roots: "C6, C7",
+    action: "Extends and abducts the wrist.",
+    note: "Unlike most of the extensor compartment, it's supplied by the radial nerve directly, before the nerve splits into its posterior interosseous branch."
+  },
+  "extensor-carpi-radialis-brevis": {
+    name: "Extensor carpi radialis brevis",
+    latin: "Musculus extensor carpi radialis brevis",
+    nerve: "Posterior interosseous nerve (deep radial nerve)",
+    roots: "C7, C8",
+    action: "Extends the wrist.",
+    note: "Its tendon origin near the lateral epicondyle is the structure most implicated in \u2018tennis elbow\u2019 (lateral epicondylitis)."
+  },
+  "brachioradialis": {
+    name: "Brachioradialis",
+    latin: "Musculus brachioradialis",
+    nerve: "Radial nerve",
+    roots: "C5, C6",
+    action: "Flexes the elbow, especially from a mid-pronated position.",
+    note: "A quirky exception \u2014 anatomically it sits in the posterior (extensor) forearm compartment and is radial-nerve innervated, yet functionally it's an elbow flexor, not an extensor."
+  },
+  "supinator": {
+    name: "Supinator",
+    latin: "Musculus supinator",
+    nerve: "Posterior interosseous nerve (deep radial nerve)",
+    roots: "C5, C6",
+    action: "Supinates the forearm.",
+    note: "The posterior interosseous nerve passes through this muscle's two heads (the arcade of Fr\u00f6hse), a common site of nerve entrapment causing posterior interosseous nerve syndrome."
+  },
+  "extensor-carpi-ulnaris": {
+    name: "Extensor carpi ulnaris",
+    latin: "Musculus extensor carpi ulnaris",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends and adducts the wrist.",
+    note: "Works as a force-couple with flexor carpi ulnaris on the palm side to produce pure wrist adduction without unwanted flexion or extension."
+  },
+  "extensor-digitorum": {
+    name: "Extensor digitorum",
+    latin: "Musculus extensor digitorum",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends the fingers at the metacarpophalangeal joints.",
+    note: "Its tendons are linked on the back of the hand by thin bands called juncturae tendinum, which is why you can't fully extend one middle finger without the neighboring fingers drifting up too."
+  },
+  "extensor-digiti-minimi": {
+    name: "Extensor digiti minimi",
+    latin: "Musculus extensor digiti minimi",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends the little finger, independent of the other digits.",
+    note: "Runs alongside extensor digitorum's own slip to the little finger, giving that digit two tendons of extension \u2014 more redundancy than any other finger."
+  },
+  "extensor-indicis": {
+    name: "Extensor indicis",
+    latin: "Musculus extensor indicis",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends the index finger independently of the others.",
+    note: "The muscle that lets you point with your index finger while keeping the other fingers curled \u2014 it's the most distal muscle to arise from the posterior interosseous nerve."
+  },
+  "abductor-pollicis-longus": {
+    name: "Abductor pollicis longus",
+    latin: "Musculus abductor pollicis longus",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Abducts and extends the thumb at the carpometacarpal joint.",
+    note: "Forms the lateral border of the anatomical snuffbox, the hollow visible at the base of the thumb when it's extended."
+  },
+  "extensor-pollicis-brevis": {
+    name: "Extensor pollicis brevis",
+    latin: "Musculus extensor pollicis brevis",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends the thumb at the metacarpophalangeal joint.",
+    note: "Runs alongside abductor pollicis longus and also forms part of the snuffbox's lateral border; inflammation of this pair's shared tendon sheath is De Quervain's tenosynovitis."
+  },
+  "extensor-pollicis-longus": {
+    name: "Extensor pollicis longus",
+    latin: "Musculus extensor pollicis longus",
+    nerve: "Posterior interosseous nerve",
+    roots: "C7, C8",
+    action: "Extends the thumb at the interphalangeal joint.",
+    note: "Forms the medial border of the snuffbox and hooks around a bony pulley (Lister's tubercle), which is why its tendon is prone to rupture after a distal radius fracture."
+  },
+  "pronator-teres": {
+    name: "Pronator teres",
+    latin: "Musculus pronator teres",
+    nerve: "Median nerve",
+    roots: "C6, C7",
+    action: "Pronates the forearm and weakly assists elbow flexion.",
+    note: "The median nerve passes between this muscle's two heads, making pronator teres a site of median nerve entrapment (pronator teres syndrome)."
+  },
+  "flexor-carpi-radialis": {
+    name: "Flexor carpi radialis",
+    latin: "Musculus flexor carpi radialis",
+    nerve: "Median nerve",
+    roots: "C6, C7",
+    action: "Flexes and abducts the wrist.",
+    note: "Its tendon is the reliable landmark used to locate the radial artery just lateral to it when taking a pulse at the wrist."
+  },
+  "palmaris-longus": {
+    name: "Palmaris longus",
+    latin: "Musculus palmaris longus",
+    nerve: "Median nerve",
+    roots: "C7, C8",
+    action: "Tenses the palmar fascia; weak wrist flexor.",
+    note: "Absent in roughly 10\u201315% of people (more often on one side only), with no meaningful loss of grip strength \u2014 it's a favorite tendon graft donor for surgeons for exactly that reason."
+  },
+  "flexor-digitorum-superficialis": {
+    name: "Flexor digitorum superficialis",
+    latin: "Musculus flexor digitorum superficialis",
+    nerve: "Median nerve",
+    roots: "C7\u2013T1",
+    action: "Flexes the middle (proximal interphalangeal) joints of the fingers.",
+    note: "Clinically tested by holding three fingers straight and asking the patient to bend only one at the middle joint \u2014 isolating this muscle from flexor digitorum profundus."
+  },
+  "flexor-carpi-ulnaris": {
+    name: "Flexor carpi ulnaris",
+    latin: "Musculus flexor carpi ulnaris",
+    nerve: "Ulnar nerve",
+    roots: "C7\u2013T1",
+    action: "Flexes and adducts the wrist.",
+    note: "The ulnar nerve runs directly beneath this muscle at the elbow (behind the medial epicondyle, the 'funny bone'), the most common site of ulnar nerve compression."
+  },
+  "flexor-digitorum-profundus-lateral": {
+    name: "Flexor digitorum profundus (index & middle)",
+    latin: "Musculus flexor digitorum profundus, lateral half",
+    nerve: "Median nerve, anterior interosseous branch",
+    roots: "C8, T1",
+    action: "Flexes the fingertip (distal interphalangeal) joints of the index and middle fingers.",
+    note: "This muscle famously has split innervation \u2014 the half serving the index and middle fingers follows the median nerve's anterior interosseous branch."
+  },
+  "flexor-digitorum-profundus-medial": {
+    name: "Flexor digitorum profundus (ring & little)",
+    latin: "Musculus flexor digitorum profundus, medial half",
+    nerve: "Ulnar nerve",
+    roots: "C8, T1",
+    action: "Flexes the fingertip (distal interphalangeal) joints of the ring and little fingers.",
+    note: "The other half of the same muscle belly, supplied by the ulnar nerve \u2014 a textbook example of one muscle with two separate nerve territories."
+  },
+  "flexor-pollicis-longus": {
+    name: "Flexor pollicis longus",
+    latin: "Musculus flexor pollicis longus",
+    nerve: "Median nerve, anterior interosseous branch",
+    roots: "C8, T1",
+    action: "Flexes the thumb at its interphalangeal joint.",
+    note: "The only muscle that flexes the tip of the thumb, which is why anterior interosseous nerve injury classically produces an inability to make an \u2018OK\u2019 sign."
+  },
+  "pronator-quadratus": {
+    name: "Pronator quadratus",
+    latin: "Musculus pronator quadratus",
+    nerve: "Median nerve, anterior interosseous branch",
+    roots: "C7\u2013T1",
+    action: "Pronates the forearm, especially against resistance.",
+    note: "Sits deep at the wrist and is actually the prime mover for pronation; pronator teres mainly kicks in for fast or resisted pronation."
+  },
+  "abductor-pollicis-brevis": {
+    name: "Abductor pollicis brevis",
+    latin: "Musculus abductor pollicis brevis",
+    nerve: "Median nerve, recurrent thenar branch",
+    roots: "C8, T1",
+    action: "Abducts the thumb, lifting it away from the palm.",
+    note: "The classic muscle tested for weakness in carpal tunnel syndrome, since it's the thenar muscle most reliably and exclusively supplied by the median nerve."
+  },
+  "flexor-pollicis-brevis": {
+    name: "Flexor pollicis brevis",
+    latin: "Musculus flexor pollicis brevis",
+    nerve: "Superficial head: median nerve. Deep head: ulnar nerve",
+    roots: "C8, T1",
+    action: "Flexes the thumb at the metacarpophalangeal joint.",
+    note: "One of the few hand muscles with a genuinely dual nerve supply split between two separate heads, which can partially spare thumb flexion even after an isolated nerve injury."
+  },
+  "opponens-pollicis": {
+    name: "Opponens pollicis",
+    latin: "Musculus opponens pollicis",
+    nerve: "Median nerve, recurrent thenar branch",
+    roots: "C8, T1",
+    action: "Opposes the thumb, rotating and drawing it across the palm toward the fingers.",
+    note: "Thumb opposition is what lets humans grip tools with precision; this muscle's loss after median nerve injury flattens the thenar eminence into an 'ape hand' appearance."
+  },
+  "adductor-pollicis": {
+    name: "Adductor pollicis",
+    latin: "Musculus adductor pollicis",
+    nerve: "Ulnar nerve, deep branch",
+    roots: "C8, T1",
+    action: "Adducts the thumb toward the palm; key muscle for key/pinch grip.",
+    note: "Tested with Froment's sign: in ulnar nerve palsy, gripping paper between thumb and index finger recruits flexor pollicis longus (median nerve) to compensate, causing visible thumb IP joint flexion."
+  },
+  "abductor-digiti-minimi": {
+    name: "Abductor digiti minimi",
+    latin: "Musculus abductor digiti minimi (manus)",
+    nerve: "Ulnar nerve, deep branch",
+    roots: "C8, T1",
+    action: "Abducts the little finger away from the ring finger.",
+    note: "Part of the hypothenar group, the little-finger mirror of the thenar muscles that move the thumb \u2014 all supplied by the ulnar nerve instead of the median nerve."
+  },
+  "flexor-digiti-minimi-brevis": {
+    name: "Flexor digiti minimi brevis",
+    latin: "Musculus flexor digiti minimi brevis (manus)",
+    nerve: "Ulnar nerve, deep branch",
+    roots: "C8, T1",
+    action: "Flexes the little finger at the metacarpophalangeal joint.",
+    note: "Sits alongside abductor digiti minimi in the hypothenar eminence and shares the same deep branch of the ulnar nerve."
+  },
+  "opponens-digiti-minimi": {
+    name: "Opponens digiti minimi",
+    latin: "Musculus opponens digiti minimi",
+    nerve: "Ulnar nerve, deep branch",
+    roots: "C8, T1",
+    action: "Draws the fifth metacarpal forward and rotates it to deepen the palm during grip.",
+    note: "Its action against opponens pollicis is what lets the little finger and thumb curl toward each other to cup the palm around an object."
+  },
+  "rectus-abdominis": {
+    name: "Rectus abdominis",
+    latin: "Musculus rectus abdominis",
+    nerve: "Thoracoabdominal nerves",
+    roots: "T7\u2013T11 (plus subcostal nerve, T12)",
+    action: "Flexes the trunk and compresses the abdominal contents.",
+    note: "Segmental nerves enter from the side and divide the muscle into the familiar bands, so each 'block' of a six-pack is supplied by a different spinal level."
+  },
+  "obliques": {
+    name: "External oblique",
+    latin: "Musculus obliquus externus abdominis",
+    nerve: "Thoracoabdominal nerves",
+    roots: "T7\u2013T11",
+    action: "Rotates and flexes the trunk; compresses the abdomen.",
+    note: "Shares its nerve supply with rectus abdominis, since both sit within the same segmented sheet of anterolateral abdominal muscle."
+  },
+  "psoas-major": {
+    name: "Psoas major",
+    latin: "Musculus psoas major",
+    nerve: "Direct branches of the lumbar plexus",
+    roots: "L1\u2013L3",
+    action: "Flexes the hip; also flexes the trunk (as in a sit-up) when the leg is fixed.",
+    note: "One of the few muscles in the body supplied directly by small branches straight off the lumbar plexus rather than a single named peripheral nerve. Joins iliacus to form the iliopsoas tendon."
+  },
+  "iliacus": {
+    name: "Iliacus",
+    latin: "Musculus iliacus",
+    nerve: "Femoral nerve",
+    roots: "L2\u2013L4",
+    action: "Flexes the hip; the strongest single contributor to hip flexion.",
+    note: "Fills the inside of the pelvic bowl (the iliac fossa) and joins psoas major at the lesser trochanter to form the combined iliopsoas tendon."
+  },
+  "glute-med-min": {
+    name: "Gluteus medius & minimus",
+    latin: "Musculus gluteus medius et musculus gluteus minimus",
+    nerve: "Superior gluteal nerve",
+    roots: "L4\u2013S1",
+    action: "Abducts and medially rotates the hip; stabilizes the pelvis during single-leg stance.",
+    note: "Weakness here produces a Trendelenburg gait \u2014 the opposite hip drops while walking because these muscles can't hold the pelvis level. A common finding after hip replacement surgery, which passes near the superior gluteal nerve."
+  },
+  "tfl": {
+    name: "Tensor fasciae latae",
+    latin: "Musculus tensor fasciae latae",
+    nerve: "Superior gluteal nerve",
+    roots: "L4, L5",
+    action: "Tenses the iliotibial band and assists hip flexion, abduction, and medial rotation.",
+    note: "Works as a functional unit with gluteus maximus through the iliotibial band, helping stabilize the knee in extension during walking and running."
+  },
+  "quadriceps": {
+    name: "Quadriceps femoris",
+    latin: "Musculus quadriceps femoris",
+    nerve: "Femoral nerve",
+    roots: "L2\u2013L4",
+    action: "Extends the knee; rectus femoris also flexes the hip.",
+    note: "The knee-jerk reflex tests this exact circuit: tapping the patellar tendon stretches the quadriceps, and the femoral nerve carries the signal in and the contraction back out at spinal level L4."
+  },
+  "adductors": {
+    name: "Hip adductors",
+    latin: "Adductor group (longus, brevis, magnus)",
+    nerve: "Obturator nerve",
+    roots: "L2\u2013L4",
+    action: "Adducts the thigh and assists in hip flexion.",
+    note: "Adductor magnus is a hybrid: its adductor portion follows the obturator nerve, but its hamstring-like portion is supplied by the tibial division of the sciatic nerve."
+  },
+  "biceps-femoris": {
+    name: "Biceps femoris",
+    latin: "Musculus biceps femoris",
+    nerve: "Long head: tibial division of the sciatic nerve. Short head: common fibular (peroneal) division",
+    roots: "L5\u2013S2",
+    action: "Flexes the knee, extends the hip (long head), and laterally rotates the flexed knee.",
+    note: "One of the few muscles supplied by both divisions of a parent nerve trunk \u2014 the sciatic nerve splits into tibial and common fibular divisions well above the knee, yet both still send a branch into this single muscle."
+  },
+  "semitendinosus": {
+    name: "Semitendinosus",
+    latin: "Musculus semitendinosus",
+    nerve: "Tibial division of the sciatic nerve",
+    roots: "L5\u2013S2",
+    action: "Flexes the knee, extends the hip, and medially rotates the flexed knee.",
+    note: "Contributes to the pes anserinus, the shared tendon insertion on the upper shin it forms together with sartorius and gracilis."
+  },
+  "semimembranosus": {
+    name: "Semimembranosus",
+    latin: "Musculus semimembranosus",
+    nerve: "Tibial division of the sciatic nerve",
+    roots: "L5\u2013S2",
+    action: "Flexes the knee, extends the hip, and medially rotates the flexed knee.",
+    note: "Lies deep to semitendinosus and takes its name from its broad, flattened (membranous) tendon of origin."
+  },
+  "tibialis-anterior": {
+    name: "Tibialis anterior",
+    latin: "Musculus tibialis anterior",
+    nerve: "Deep fibular (peroneal) nerve",
+    roots: "L4\u2013S1",
+    action: "Dorsiflexes and inverts the foot.",
+    note: "Runs along the outer shin. Damage to the deep fibular nerve produces 'foot drop', where this muscle can no longer lift the foot during a stride."
+  },
+  "extensor-digitorum-longus": {
+    name: "Extensor digitorum longus",
+    latin: "Musculus extensor digitorum longus",
+    nerve: "Deep fibular nerve",
+    roots: "L5, S1",
+    action: "Extends the lateral four toes and assists dorsiflexion of the ankle.",
+    note: "Shares the anterior compartment of the leg with tibialis anterior, so the two are usually weak together in a common fibular nerve injury."
+  },
+  "extensor-hallucis-longus": {
+    name: "Extensor hallucis longus",
+    latin: "Musculus extensor hallucis longus",
+    nerve: "Deep fibular nerve",
+    roots: "L5, S1",
+    action: "Extends the big toe and assists dorsiflexion of the ankle.",
+    note: "Its tendon, easily felt on top of the foot, is the standard landmark clinicians use to test the L5 nerve root during a neurological exam."
+  },
+  "peroneus-longus": {
+    name: "Peroneus (fibularis) longus",
+    latin: "Musculus peroneus longus",
+    nerve: "Superficial fibular nerve",
+    roots: "L5, S1",
+    action: "Everts the foot and assists plantarflexion; its tendon helps support the transverse arch.",
+    note: "Its long tendon wraps under the sole of the foot to reach the first metatarsal, giving it a role in arch support most people don't expect from a 'lateral' muscle."
+  },
+  "peroneus-brevis": {
+    name: "Peroneus (fibularis) brevis",
+    latin: "Musculus peroneus brevis",
+    nerve: "Superficial fibular nerve",
+    roots: "L5, S1",
+    action: "Everts the foot and assists plantarflexion.",
+    note: "Its tendon is the one most often involved in peroneal tendon subluxation after an ankle sprain, since it sits most superficially behind the lateral malleolus."
+  },
+  "trapezius": {
+    name: "Trapezius",
+    latin: "Musculus trapezius",
+    nerve: "Accessory nerve (cranial nerve XI)",
+    roots: "Cranial root plus cervical plexus, C3\u2013C4 (proprioception)",
+    action: "Elevates, retracts, and rotates the scapula; extends the neck.",
+    note: "Motor control comes purely from the accessory nerve, a cranial nerve rather than a spinal one \u2014 the cervical fibres it also receives carry sensory and proprioceptive information only."
+  },
+  "lat-dorsi": {
+    name: "Latissimus dorsi",
+    latin: "Musculus latissimus dorsi",
+    nerve: "Thoracodorsal nerve",
+    roots: "C6\u2013C8",
+    action: "Extends, adducts, and medially rotates the arm.",
+    note: "Sometimes called the 'swimmer's muscle' for its role in the pull-through phase of freestyle. Surgeons use the thoracodorsal pedicle to relocate this muscle as a flap in reconstructive surgery."
+  },
+  "erector-spinae": {
+    name: "Erector spinae",
+    latin: "Musculi erectores spinae",
+    nerve: "Posterior rami of spinal nerves",
+    roots: "Segmental, cervical through sacral",
+    action: "Extends and laterally flexes the vertebral column.",
+    note: "Unlike most limb muscles, this group is supplied directly and locally by the posterior branch of each spinal nerve as it exits the vertebral column beside it."
+  },
+  "triceps": {
+    name: "Triceps brachii",
+    latin: "Musculus triceps brachii",
+    nerve: "Radial nerve",
+    roots: "C6\u2013C8",
+    action: "Extends the elbow.",
+    note: "The radial nerve runs in the spiral (radial) groove of the humerus directly beneath this muscle, which is why a mid-shaft humerus fracture commonly injures it and weakens elbow extension."
+  },
+  "glute-max": {
+    name: "Gluteus maximus",
+    latin: "Musculus gluteus maximus",
+    nerve: "Inferior gluteal nerve",
+    roots: "L5\u2013S2",
+    action: "Extends and laterally rotates the hip; the body's primary climbing and sprinting muscle.",
+    note: "Intramuscular injections are given in the upper outer quadrant of this muscle specifically to stay clear of the sciatic nerve, which runs beneath its lower portion."
+  },
+  "gastrocnemius": {
+    name: "Gastrocnemius",
+    latin: "Musculus gastrocnemius",
+    nerve: "Tibial nerve",
+    roots: "S1, S2",
+    action: "Plantarflexes the foot and flexes the knee.",
+    note: "Together with soleus it forms the triceps surae, converging on the Achilles tendon. The ankle-jerk reflex tests this muscle at spinal level S1."
+  },
+  "soleus": {
+    name: "Soleus",
+    latin: "Musculus soleus",
+    nerve: "Tibial nerve",
+    roots: "S1, S2",
+    action: "Plantarflexes the foot; unlike gastrocnemius, it has no action at the knee.",
+    note: "Packed with slow-twitch fibers for standing endurance and often called the body's 'second heart,' since its contractions help pump venous blood back up the leg."
+  },
+  "tibialis-posterior": {
+    name: "Tibialis posterior",
+    latin: "Musculus tibialis posterior",
+    nerve: "Tibial nerve",
+    roots: "L4, L5",
+    action: "Inverts and plantarflexes the foot; supports the medial longitudinal arch.",
+    note: "The single most important dynamic support for the arch of the foot. Its gradual failure is the leading cause of acquired adult flatfoot deformity."
+  },
+  "flexor-digitorum-longus": {
+    name: "Flexor digitorum longus",
+    latin: "Musculus flexor digitorum longus",
+    nerve: "Tibial nerve",
+    roots: "L5, S1",
+    action: "Flexes the lateral four toes and assists plantarflexion.",
+    note: "Crosses paths with flexor hallucis longus's tendon in the sole at a crossing point traditionally called the 'knot of Henry.'"
+  },
+  "flexor-hallucis-longus": {
+    name: "Flexor hallucis longus",
+    latin: "Musculus flexor hallucis longus",
+    nerve: "Tibial nerve",
+    roots: "L5\u2013S2",
+    action: "Flexes the big toe and assists plantarflexion.",
+    note: "Runs in a groove behind the medial malleolus and is a key push-off muscle during the toe-off phase of walking and running."
+  },
+  "abductor-hallucis": {
+    name: "Abductor hallucis",
+    latin: "Musculus abductor hallucis",
+    nerve: "Medial plantar nerve",
+    roots: "S1, S2",
+    action: "Abducts and flexes the big toe.",
+    note: "Forms part of the medial longitudinal arch's soft-tissue support and is a useful surgical landmark for locating the plantar nerves."
+  },
+  "flexor-digitorum-brevis-foot": {
+    name: "Flexor digitorum brevis",
+    latin: "Musculus flexor digitorum brevis",
+    nerve: "Medial plantar nerve",
+    roots: "S1, S2",
+    action: "Flexes the middle phalanges of the lateral four toes.",
+    note: "The sole's functional counterpart to flexor digitorum superficialis in the hand \u2014 same layer, same basic job, different limb."
+  },
+  "flexor-hallucis-brevis": {
+    name: "Flexor hallucis brevis",
+    latin: "Musculus flexor hallucis brevis",
+    nerve: "Medial plantar nerve",
+    roots: "S1, S2",
+    action: "Flexes the big toe at the metatarsophalangeal joint.",
+    note: "Sits within the sesamoid complex under the first metatarsal head, a region prone to sesamoiditis in runners and dancers."
+  },
+  "quadratus-plantae": {
+    name: "Quadratus plantae",
+    latin: "Musculus quadratus plantae",
+    nerve: "Lateral plantar nerve",
+    roots: "S1\u2013S3",
+    action: "Realigns the pull of flexor digitorum longus's tendon into a straight line toward the toes.",
+    note: "Exists purely to correct a geometry problem: flexor digitorum longus approaches the toes at an angle, and this muscle straightens out its line of pull."
+  },
+  "lumbricals-foot": {
+    name: "Lumbricals (foot)",
+    latin: "Musculi lumbricales pedis",
+    nerve: "1st: medial plantar nerve. 2nd\u20134th: lateral plantar nerve",
+    roots: "S2, S3",
+    action: "Flex the toes at the metatarsophalangeal joints while extending the interphalangeal joints.",
+    note: "Mirror the hand's lumbricals almost exactly, right down to the same split innervation pattern by digit."
+  },
+  "interossei-foot": {
+    name: "Interossei (foot)",
+    latin: "Musculi interossei pedis",
+    nerve: "Lateral plantar nerve",
+    roots: "S2, S3",
+    action: "Abduct and adduct the toes relative to the second toe.",
+    note: "Far less functionally important than their hand counterparts, since the foot doesn't rely on fine, independent toe control the way the hand relies on finger dexterity."
+  },
+  "adductor-hallucis": {
+    name: "Adductor hallucis",
+    latin: "Musculus adductor hallucis",
+    nerve: "Lateral plantar nerve",
+    roots: "S2, S3",
+    action: "Adducts the big toe and helps maintain the transverse arch of the foot.",
+    note: "Has oblique and transverse heads, conceptually similar to adductor pollicis in the hand."
+  },
+  "abductor-digiti-minimi-foot": {
+    name: "Abductor digiti minimi (foot)",
+    latin: "Musculus abductor digiti minimi pedis",
+    nerve: "Lateral plantar nerve",
+    roots: "S2, S3",
+    action: "Abducts the little toe.",
+    note: "Forms the lateral border of the foot and contributes to the lateral longitudinal arch."
+  },
+  "extensor-digitorum-brevis": {
+    name: "Extensor digitorum brevis",
+    latin: "Musculus extensor digitorum brevis",
+    nerve: "Deep fibular nerve",
+    roots: "S1, S2",
+    action: "Extends the toes on the top of the foot.",
+    note: "The only intrinsic foot muscle supplied by the deep fibular nerve rather than the plantar nerves \u2014 it lives on the dorsum, not the sole, which explains the exception."
+  }
+};
+
+const compartments = {
+  "anterior-arm": {
+    name: "Anterior compartment of the arm",
+    blurb: "Three flexors on the front of the upper arm, all sharing the same nerve.",
+    muscles: ["biceps-brachii", "coracobrachialis", "brachialis"]
+  },
+  "rotator-cuff": {
+    name: "Rotator cuff (posterior part)",
+    blurb: "Deep shoulder stabilizers. Remembered with the mnemonic SITS \u2014 Supraspinatus, Infraspinatus, Teres minor, Subscapularis (subscapularis sits on the front of the scapula and isn't shown here).",
+    muscles: ["supraspinatus", "infraspinatus", "teres-minor"]
+  },
+  "anterior-forearm": {
+    name: "Anterior (flexor) compartment of the forearm",
+    blurb: "Mostly median nerve territory, with the ulnar nerve claiming two muscles \u2014 flexor carpi ulnaris and half of flexor digitorum profundus.",
+    muscles: ["pronator-teres", "flexor-carpi-radialis", "palmaris-longus", "flexor-digitorum-superficialis", "flexor-carpi-ulnaris", "flexor-digitorum-profundus-lateral", "flexor-digitorum-profundus-medial", "flexor-pollicis-longus", "pronator-quadratus"]
+  },
+  "posterior-forearm": {
+    name: "Posterior (extensor) compartment of the forearm",
+    blurb: "Almost entirely posterior interosseous nerve territory, except brachioradialis and extensor carpi radialis longus, which answer to the radial nerve before it branches.",
+    muscles: ["extensor-carpi-radialis-longus", "extensor-carpi-radialis-brevis", "brachioradialis", "supinator", "extensor-carpi-ulnaris", "extensor-digitorum", "extensor-digiti-minimi", "extensor-indicis", "abductor-pollicis-longus", "extensor-pollicis-brevis", "extensor-pollicis-longus"]
+  },
+  "hand-intrinsics": {
+    name: "Intrinsic hand muscles (thenar, hypothenar & adductor)",
+    blurb: "The small muscles of the palm. Median nerve runs the thumb-side thenar group, ulnar nerve runs the little-finger-side hypothenar group and adductor pollicis \u2014 the classic 'median does the thumb, ulnar does everything medial' rule, with one dual-innervated exception.",
+    muscles: ["abductor-pollicis-brevis", "flexor-pollicis-brevis", "opponens-pollicis", "adductor-pollicis", "abductor-digiti-minimi", "flexor-digiti-minimi-brevis", "opponens-digiti-minimi"]
+  },
+  "iliopsoas": {
+    name: "Iliopsoas",
+    blurb: "The body's strongest hip flexor, formed from two muscles that don't share a nerve \u2014 psoas major answers directly to the lumbar plexus, iliacus to the femoral nerve.",
+    muscles: ["psoas-major", "iliacus"]
+  },
+  "hamstrings": {
+    name: "Hamstrings",
+    blurb: "Three muscles on the back of the thigh, almost entirely tibial-division territory \u2014 except for one head of biceps femoris, which is a fibular-nerve outlier.",
+    muscles: ["biceps-femoris", "semitendinosus", "semimembranosus"]
+  },
+  "anterior-leg": {
+    name: "Anterior compartment of the leg",
+    blurb: "The shin muscles, all deep fibular nerve territory. Weakness here is the classic cause of foot drop.",
+    muscles: ["tibialis-anterior", "extensor-digitorum-longus", "extensor-hallucis-longus"]
+  },
+  "peroneals": {
+    name: "Lateral compartment of the leg (peroneals)",
+    blurb: "The foot everters, both running on the superficial fibular nerve \u2014 the sensory counterpart to the deep fibular nerve's motor territory just in front of them.",
+    muscles: ["peroneus-longus", "peroneus-brevis"]
+  },
+  "posterior-leg": {
+    name: "Posterior compartment of the leg (calf)",
+    blurb: "Superficial and deep calf muscles, unified by the tibial nerve. Superficial (gastrocnemius, soleus) drives push-off; deep (tibialis posterior, the long toe flexors) supports the arch and flexes the toes.",
+    muscles: ["gastrocnemius", "soleus", "tibialis-posterior", "flexor-digitorum-longus", "flexor-hallucis-longus"]
+  },
+  "foot-intrinsics": {
+    name: "Intrinsic foot muscles",
+    blurb: "The sole's small muscles, mostly split between the medial and lateral plantar nerves (both branches of the tibial nerve) \u2014 the foot's version of the hand's median/ulnar split. One dorsal exception answers to the deep fibular nerve instead.",
+    muscles: ["abductor-hallucis", "flexor-digitorum-brevis-foot", "flexor-hallucis-brevis", "quadratus-plantae", "lumbricals-foot", "interossei-foot", "adductor-hallucis", "abductor-digiti-minimi-foot", "extensor-digitorum-brevis"]
+  }
+};
+
+const nerveCategories = {
+  "axillary":          {label:"Axillary nerve",                    color:"#A6323B"},
+  "musculocutaneous":  {label:"Musculocutaneous nerve",             color:"#C1442E"},
+  "radial":            {label:"Radial nerve",                       color:"#D97D3D"},
+  "median":            {label:"Median nerve",                       color:"#B85C3A"},
+  "ulnar":             {label:"Ulnar nerve",                        color:"#8C3F32"},
+  "suprascapular":     {label:"Suprascapular nerve",                color:"#CC5A45"},
+  "dorsal-scapular":   {label:"Dorsal scapular nerve",              color:"#A64C4C"},
+  "long-thoracic":     {label:"Long thoracic nerve",                color:"#9E5B3D"},
+  "thoracodorsal":     {label:"Thoracodorsal nerve",                color:"#B14A3E"},
+  "lower-subscapular": {label:"Lower subscapular nerve",            color:"#D68A4C"},
+  "pectoral":          {label:"Pectoral nerves (medial & lateral)", color:"#8E3B4E"},
+  "phrenic":           {label:"Phrenic nerve",                      color:"#C76B3E"},
+  "thoracoabdominal":  {label:"Thoracoabdominal nerves",            color:"#A3402E"},
+  "accessory":         {label:"Accessory nerve (CN XI)",            color:"#7A3B36"},
+  "posterior-rami":    {label:"Posterior rami (spinal)",            color:"#B4643C"},
+  "femoral":           {label:"Femoral nerve",                      color:"#DE8B4A"},
+  "obturator":         {label:"Obturator nerve",                    color:"#9C5230"},
+  "deep-fibular":      {label:"Deep fibular (peroneal) nerve",      color:"#C24632"},
+  "tibial":            {label:"Tibial nerve / sciatic (tibial div.)", color:"#7F4B3A"},
+  "inferior-gluteal":  {label:"Inferior gluteal nerve",             color:"#E0985A"},
+  "superior-gluteal":  {label:"Superior gluteal nerve",             color:"#8F4A2C"},
+  "lumbar-plexus":     {label:"Lumbar plexus (direct branches)",    color:"#96461F"},
+  "superficial-fibular":{label:"Superficial fibular (peroneal) nerve", color:"#D4A24C"}
+};
+
+// Which nerve(s) color each clickable region on the diagram. Two entries = split/gradient fill.
+const regionNerve = {
+  "deltoid": ["axillary"],
+  "serratus-anterior": ["long-thoracic"],
+  "pec-major": ["pectoral"],
+  "diaphragm": ["phrenic"],
+  "anterior-arm": ["musculocutaneous"],
+  "anterior-forearm": ["median","ulnar"],
+  "hand-intrinsics": ["median","ulnar"],
+  "rectus-abdominis": ["thoracoabdominal"],
+  "obliques": ["thoracoabdominal"],
+  "quadriceps": ["femoral"],
+  "adductors": ["obturator"],
+  "iliopsoas": ["lumbar-plexus","femoral"],
+  "tfl": ["superior-gluteal"],
+  "anterior-leg": ["deep-fibular"],
+  "peroneals": ["superficial-fibular"],
+  "foot-intrinsics": ["tibial","deep-fibular"],
+  "trapezius": ["accessory"],
+  "lat-dorsi": ["thoracodorsal"],
+  "rhomboids": ["dorsal-scapular"],
+  "rotator-cuff": ["suprascapular","axillary"],
+  "teres-major": ["lower-subscapular"],
+  "erector-spinae": ["posterior-rami"],
+  "triceps": ["radial"],
+  "posterior-forearm": ["radial"],
+  "glute-med-min": ["superior-gluteal"],
+  "glute-max": ["inferior-gluteal"],
+  "hamstrings": ["tibial"],
+  "posterior-leg": ["tibial"]
+};
+
+// Which single nerve is the primary supply of each individual muscle (used by the legend drill-down).
+const muscleNerveKey = {
+  "deltoid":"axillary", "pec-major":"pectoral", "diaphragm":"phrenic", "serratus-anterior":"long-thoracic",
+  "rhomboids":"dorsal-scapular", "biceps-brachii":"musculocutaneous", "coracobrachialis":"musculocutaneous",
+  "brachialis":"musculocutaneous", "teres-minor":"axillary", "supraspinatus":"suprascapular",
+  "infraspinatus":"suprascapular", "teres-major":"lower-subscapular",
+  "extensor-carpi-radialis-longus":"radial", "extensor-carpi-radialis-brevis":"radial", "brachioradialis":"radial",
+  "supinator":"radial", "extensor-carpi-ulnaris":"radial", "extensor-digitorum":"radial",
+  "extensor-digiti-minimi":"radial", "extensor-indicis":"radial", "abductor-pollicis-longus":"radial",
+  "extensor-pollicis-brevis":"radial", "extensor-pollicis-longus":"radial", "triceps":"radial",
+  "pronator-teres":"median", "flexor-carpi-radialis":"median", "palmaris-longus":"median",
+  "flexor-digitorum-superficialis":"median", "flexor-digitorum-profundus-lateral":"median",
+  "flexor-pollicis-longus":"median", "pronator-quadratus":"median", "abductor-pollicis-brevis":"median",
+  "flexor-pollicis-brevis":"median", "opponens-pollicis":"median",
+  "flexor-carpi-ulnaris":"ulnar", "flexor-digitorum-profundus-medial":"ulnar", "adductor-pollicis":"ulnar",
+  "abductor-digiti-minimi":"ulnar", "flexor-digiti-minimi-brevis":"ulnar", "opponens-digiti-minimi":"ulnar",
+  "rectus-abdominis":"thoracoabdominal", "obliques":"thoracoabdominal",
+  "quadriceps":"femoral", "adductors":"obturator",
+  "psoas-major":"lumbar-plexus", "iliacus":"femoral",
+  "glute-med-min":"superior-gluteal", "tfl":"superior-gluteal",
+  "tibialis-anterior":"deep-fibular", "extensor-digitorum-longus":"deep-fibular", "extensor-hallucis-longus":"deep-fibular",
+  "peroneus-longus":"superficial-fibular", "peroneus-brevis":"superficial-fibular",
+  "trapezius":"accessory", "lat-dorsi":"thoracodorsal", "erector-spinae":"posterior-rami",
+  "glute-max":"inferior-gluteal",
+  "biceps-femoris":"tibial", "semitendinosus":"tibial", "semimembranosus":"tibial",
+  "gastrocnemius":"tibial", "soleus":"tibial", "tibialis-posterior":"tibial",
+  "flexor-digitorum-longus":"tibial", "flexor-hallucis-longus":"tibial",
+  "abductor-hallucis":"tibial", "flexor-digitorum-brevis-foot":"tibial", "flexor-hallucis-brevis":"tibial",
+  "quadratus-plantae":"tibial", "lumbricals-foot":"tibial", "interossei-foot":"tibial",
+  "adductor-hallucis":"tibial", "abductor-digiti-minimi-foot":"tibial",
+  "extensor-digitorum-brevis":"deep-fibular"
+};
+
+function applyNerveColors(){
+  document.querySelectorAll('.muscle').forEach(el => {
+    const id = el.getAttribute('data-id');
+    const keys = regionNerve[id];
+    if(!keys) return;
+    if(keys.length === 1){
+      el.style.fill = nerveCategories[keys[0]].color;
+    } else {
+      el.style.fill = `url(#grad-${id})`;
+    }
+  });
+}
+
+function renderLegend(){
+  const grid = document.getElementById('legend-grid');
+  grid.innerHTML = Object.keys(nerveCategories).map(key => {
+    const n = nerveCategories[key];
+    return `<button class="legend-item" data-nerve="${key}" onclick="selectNerve('${key}')">
+      <span class="legend-swatch" style="background:${n.color}"></span>${n.label}
+    </button>`;
+  }).join('');
+}
+
+function selectNerve(key){
+  activeId = null;
+  activeCompartment = null;
+  document.querySelectorAll('.muscle').forEach(el => {
+    const id = el.getAttribute('data-id');
+    const keys = regionNerve[id] || [];
+    if(keys.includes(key)){
+      el.classList.add('active');
+      el.classList.remove('dimmed');
+    } else {
+      el.classList.remove('active');
+      el.classList.add('dimmed');
+    }
+  });
+  document.querySelectorAll('.legend-item').forEach(el => {
+    el.classList.toggle('legend-active', el.getAttribute('data-nerve') === key);
+  });
+  const n = nerveCategories[key];
+  const muscles = Object.keys(muscleNerveKey).filter(m => muscleNerveKey[m] === key);
+  document.getElementById('panel-empty').style.display = 'none';
+  const content = document.getElementById('panel-content');
+  content.style.display = 'block';
+  const chips = muscles.map(mid => `<button class="chip" onclick="renderMuscle('${mid}', null, '${key}')">${muscleDetails[mid].name}</button>`).join('');
+  content.innerHTML = `
+    <div class="m-eyebrow">Nerve</div>
+    <h2 class="m-name"><span class="nerve-swatch" style="background:${n.color}"></span>${n.label}</h2>
+    <div class="chip-label">Muscles on this diagram it supplies (${muscles.length})</div>
+    <div class="chip-list">${chips}</div>
+  `;
+}
+
+let activeId = null;
+let activeCompartment = null;
+
+function setView(view){
+  currentView = view;
+  document.getElementById('view-front').style.display = view === 'front' ? 'block' : 'none';
+  document.getElementById('view-back').style.display = view === 'back' ? 'block' : 'none';
+  document.getElementById('btn-front').classList.toggle('active', view === 'front');
+  document.getElementById('btn-back').classList.toggle('active', view === 'back');
+  activeId = null;
+  clearHighlight();
+  showEmpty();
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.muscle').forEach(el => {
+    el.classList.remove('active','dimmed');
+  });
+  document.querySelectorAll('.legend-item').forEach(el => {
+    el.classList.remove('legend-active');
+  });
+}
+
+function showEmpty(){
+  document.getElementById('panel-empty').style.display = 'flex';
+  document.getElementById('panel-content').style.display = 'none';
+}
+
+function selectRegion(id){
+  activeId = id;
+  activeCompartment = compartments[id] ? id : null;
+  document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('legend-active'));
+  document.querySelectorAll('.muscle').forEach(el => {
+    if(el.getAttribute('data-id') === id){
+      el.classList.add('active');
+      el.classList.remove('dimmed');
+    } else {
+      el.classList.remove('active');
+      el.classList.add('dimmed');
+    }
+  });
+  if(compartments[id]){
+    renderCompartment(id);
+  } else {
+    renderMuscle(id, null);
+  }
+}
+
+function renderCompartment(id){
+  const c = compartments[id];
+  document.getElementById('panel-empty').style.display = 'none';
+  const content = document.getElementById('panel-content');
+  content.style.display = 'block';
+  const chips = c.muscles.map(mid => {
+    const md = muscleDetails[mid];
+    return `<button class="chip" onclick="renderMuscle('${mid}', '${id}')">${md.name}</button>`;
+  }).join('');
+  content.innerHTML = `
+    <div class="m-eyebrow">Compartment</div>
+    <h2 class="m-name">${c.name}</h2>
+    <p class="m-blurb">${c.blurb}</p>
+    <div class="chip-label">Contains ${c.muscles.length} muscles \u2014 select one</div>
+    <div class="chip-list">${chips}</div>
+  `;
+}
+
+function renderMuscle(id, fromCompartment, fromNerve){
+  const m = muscleDetails[id];
+  if(!m) return;
+  document.getElementById('panel-empty').style.display = 'none';
+  const content = document.getElementById('panel-content');
+  content.style.display = 'block';
+  let backBtn = '';
+  let tag = `<div class="m-eyebrow">Muscle group</div>`;
+  if(fromCompartment){
+    backBtn = `<button class="back-link" onclick="renderCompartment('${fromCompartment}')">\u2190 Back to ${compartments[fromCompartment].name}</button>`;
+    tag = `<div class="comp-tag">${compartments[fromCompartment].name}</div>`;
+  } else if(fromNerve){
+    const n = nerveCategories[fromNerve];
+    backBtn = `<button class="back-link" onclick="selectNerve('${fromNerve}')">\u2190 Back to ${n.label}</button>`;
+    tag = `<div class="comp-tag"><span class="nerve-swatch" style="background:${n.color}"></span>${n.label}</div>`;
+  }
+  content.innerHTML = `
+    ${backBtn}
+    ${tag}
+    <h2 class="m-name">${m.name}</h2>
+    <p class="m-latin">${m.latin}</p>
+    <div class="m-grid">
+      <div class="m-card">
+        <div class="m-label">Innervation</div>
+        <div class="m-value">${m.nerve}</div>
+      </div>
+      <div class="m-card">
+        <div class="m-label">Nerve roots</div>
+        <div class="m-value roots">${m.roots}</div>
+      </div>
+      <div class="m-card wide">
+        <div class="m-label">Primary action</div>
+        <div class="m-desc"><p>${m.action}</p></div>
+      </div>
+      <div class="m-card wide">
+        <div class="m-label">Notes</div>
+        <div class="m-desc"><p>${m.note}</p></div>
+      </div>
+    </div>
+  `;
+}
+
+document.querySelectorAll('.muscle').forEach(el => {
+  el.addEventListener('click', () => selectRegion(el.getAttribute('data-id')));
+});
+
+applyNerveColors();
+renderLegend();
+
+</script>
+</body>
+</html>
