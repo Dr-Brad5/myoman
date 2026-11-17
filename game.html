@@ -576,7 +576,7 @@ function showTarget(id){
 // otherwise a top-10 list kept in this browser.
 
 const REMOTE = (typeof SCOREBOARD_CONFIG !== 'undefined' && SCOREBOARD_CONFIG.url && SCOREBOARD_CONFIG.anonKey)
-  ? {url: SCOREBOARD_CONFIG.url.replace(/\/+$/,'') + '/rest/v1/scores', key: SCOREBOARD_CONFIG.anonKey}
+  ? {url: SCOREBOARD_CONFIG.url.replace(/\/+$/,'').replace(/\/rest\/v1$/,'') + '/rest/v1/scores', key: SCOREBOARD_CONFIG.anonKey}
   : null;
 const remoteHeaders = () => ({'apikey': REMOTE.key, 'Authorization': 'Bearer ' + REMOTE.key, 'Content-Type': 'application/json'});
 

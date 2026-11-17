@@ -9,6 +9,6 @@
 // player's own browser.
 
 const SCOREBOARD_CONFIG = {
-  url: '',
+  url: 'https://zuhkndfzxuuflzgplody.supabase.co',
   anonKey: ''
 };
