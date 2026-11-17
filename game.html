@@ -294,6 +294,7 @@
     background:#fff;
   }
   .saved-msg{font-size:13px; color:var(--good); margin:0 0 8px;}
+  .saved-msg.err{color:var(--bad);}
   .review{margin-top:26px;}
   .review h3{font-family:'Source Serif 4',serif; font-size:18px; margin:0 0 10px;}
   .review-item{
@@ -408,6 +409,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="scoreboard-config.js"></script>
 <script>
 const ROUND_SECONDS = 60;
 const STORE_KEY = 'myoman.scoreboard.v1';
@@ -570,22 +572,70 @@ function showTarget(id){
 }
 
 /* ---------- Scoreboard ---------- */
+// Uses the shared Supabase table when scoreboard-config.js is filled in,
+// otherwise a top-10 list kept in this browser.
 
-function loadScores(){
+const REMOTE = (typeof SCOREBOARD_CONFIG !== 'undefined' && SCOREBOARD_CONFIG.url && SCOREBOARD_CONFIG.anonKey)
+  ? {url: SCOREBOARD_CONFIG.url.replace(/\/+$/,'') + '/rest/v1/scores', key: SCOREBOARD_CONFIG.anonKey}
+  : null;
+const remoteHeaders = () => ({'apikey': REMOTE.key, 'Authorization': 'Bearer ' + REMOTE.key, 'Content-Type': 'application/json'});
+
+function loadLocal(){
   try{ const v = JSON.parse(localStorage.getItem(STORE_KEY)); return Array.isArray(v) ? v : []; }
   catch(e){ return []; }
 }
-function saveScores(list){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; }
-  catch(e){ return false; }
+function saveLocal(entry){
+  try{
+    const list = loadLocal();
+    list.push(entry);
+    localStorage.setItem(STORE_KEY, JSON.stringify(list));
+    return true;
+  }catch(e){ return false; }
 }
+
+async function fetchTopScores(){
+  if(!REMOTE){
+    return loadLocal().sort((a,b) => b.score - a.score || a.ts - b.ts).slice(0, 10)
+      .map(s => ({...s, key: 'local-' + s.ts}));
+  }
+  const res = await fetch(REMOTE.url + '?select=id,name,score,correct,answered,created_at&order=score.desc,created_at.asc&limit=10',
+    {headers: remoteHeaders()});
+  if(!res.ok) throw new Error('Scoreboard request failed (' + res.status + ')');
+  return (await res.json()).map(s => ({...s, key: 'remote-' + s.id}));
+}
+
+// Returns the saved entry's key, used to highlight it on the board.
+async function submitScore(entry){
+  if(!REMOTE){
+    if(!saveLocal(entry)) throw new Error('This browser blocked saving');
+    return 'local-' + entry.ts;
+  }
+  const res = await fetch(REMOTE.url, {
+    method: 'POST',
+    headers: {...remoteHeaders(), 'Prefer': 'return=representation'},
+    body: JSON.stringify({name: entry.name, score: entry.score, correct: entry.correct, answered: entry.answered})
+  });
+  if(!res.ok) throw new Error('Saving failed (' + res.status + ')');
+  const rows = await res.json();
+  return 'remote-' + rows[0].id;
+}
+
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function renderBoard(el, highlightTs){
-  const scores = loadScores().sort((a,b) => b.score - a.score || a.ts - b.ts).slice(0, 10);
+
+async function renderBoard(el, highlightKey){
+  const sub = REMOTE ? 'Top 10 scores from every player' : 'Top 10 scores saved in this browser';
+  if(!el.innerHTML) el.innerHTML = `<h3>Scoreboard</h3><p class="sub">${sub}</p><div class="empty">Loading&hellip;</div>`;
+  let scores;
+  try{
+    scores = await fetchTopScores();
+  }catch(err){
+    el.innerHTML = `<h3>Scoreboard</h3><p class="sub">${sub}</p><div class="empty">Couldn't load the scoreboard right now. Check your connection and refresh.</div>`;
+    return;
+  }
   const rows = scores.map((s, i) => `
-    <tr class="${s.ts === highlightTs ? 'mine' : ''}">
+    <tr class="${s.key === highlightKey ? 'mine' : ''}">
       <td class="rank">${i+1}</td>
       <td class="name">${esc(s.name)}</td>
       <td class="num">${s.correct}/${s.answered}</td>
@@ -593,7 +643,7 @@ function renderBoard(el, highlightTs){
     </tr>`).join('');
   el.innerHTML = `
     <h3>Scoreboard</h3>
-    <p class="sub">Top 10 scores saved in this browser</p>
+    <p class="sub">${sub}</p>
     ${scores.length ? `<table>
       <thead><tr><th></th><th>Name</th><th class="num">Right</th><th class="num">Pts</th></tr></thead>
       <tbody>${rows}</tbody></table>` : `<div class="empty">No scores yet. Be the first.</div>`}
@@ -604,7 +654,7 @@ function renderBoard(el, highlightTs){
 
 const POOL = Object.keys(muscleDetails);
 let deck = [], current = null, qStart = 0, endAt = 0, tick = null;
-let score = 0, history = [], lastSavedTs = null;
+let score = 0, history = [];
 
 const $ = id => document.getElementById(id);
 function show(screen){
@@ -624,7 +674,7 @@ function pointsFor(seconds){
 
 function startRound(){
   deck = shuffle(POOL.slice());
-  score = 0; history = []; lastSavedTs = null;
+  score = 0; history = [];
   $('hud-score').textContent = '0';
   $('feedback').textContent = '';
   $('feedback').className = 'feedback';
@@ -739,20 +789,31 @@ $('answer-form').addEventListener('submit', e => {
   }
   submitAnswer(false);
 });
-$('save-form').addEventListener('submit', e => {
+$('save-form').addEventListener('submit', async e => {
   e.preventDefault();
+  const btn = e.target.querySelector('button');
+  if(btn.disabled) return;
   const name = $('in-name').value.trim().slice(0, 24) || 'Anonymous';
   const entry = {name, score, correct: history.filter(h => h.ok).length, answered: history.length, ts: Date.now()};
-  const list = loadScores();
-  list.push(entry);
-  const ok = saveScores(list);
-  try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
-  lastSavedTs = entry.ts;
-  $('save-block').classList.add('hidden');
-  $('saved-msg').textContent = ok ? `Saved ${name}'s score of ${score}.` : 'This browser blocked saving, so the score could not be stored.';
-  $('saved-msg').classList.remove('hidden');
-  renderBoard($('board-end'), entry.ts);
-  renderBoard($('board-start'));
+  try{ localStorage.setItem(NAME_KEY, name); }catch(err){}
+  btn.disabled = true;
+  btn.textContent = 'Saving\u2026';
+  try{
+    const key = await submitScore(entry);
+    $('save-block').classList.add('hidden');
+    $('saved-msg').textContent = `Saved ${name}'s score of ${score}.`;
+    $('saved-msg').classList.remove('err');
+    $('saved-msg').classList.remove('hidden');
+    renderBoard($('board-end'), key);
+    renderBoard($('board-start'));
+  }catch(err){
+    $('saved-msg').textContent = "Couldn't save the score. Check your connection and try again.";
+    $('saved-msg').classList.add('err');
+    $('saved-msg').classList.remove('hidden');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save score';
+  }
 });
 
 renderBoard($('board-start'));
